@@ -1,6 +1,6 @@
 package com.github.bckfnn.mongodb.bson;
 
-import org.vertx.java.core.buffer.Buffer;
+import io.vertx.core.buffer.Buffer;
 
 public class BsonArrayLazy extends BsonArray {
     private Buffer buffer;
@@ -9,6 +9,7 @@ public class BsonArrayLazy extends BsonArray {
         this.buffer = buffer;
     }
 
+    @Override
     protected void init() {
         if (buffer == null) {
             return;

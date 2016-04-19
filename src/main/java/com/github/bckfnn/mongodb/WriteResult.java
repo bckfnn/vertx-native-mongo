@@ -3,6 +3,10 @@ package com.github.bckfnn.mongodb;
 import com.github.bckfnn.mongodb.bson.BsonDoc;
 import com.github.bckfnn.mongodb.msg.Reply;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+
 
 public class WriteResult {
     private BsonDoc lastError;
@@ -23,16 +27,14 @@ public class WriteResult {
         return lastError.getDouble("ok");
     }
 
+    @Override
     public String toString() {
         return lastError.toString();
     }
 
-    public static Callback<Reply> result(final Callback<WriteResult> callback) {
-        return new Callback.Default<Reply>(callback) {
-            @Override
-            public void handle(Reply reply) {
-                callback.handle(new WriteResult(reply.getDocuments().get(0)));
-            }
-        };
+    public static Handler<AsyncResult<Reply>> result(final Handler<AsyncResult<WriteResult>> handler) {
+        return Utils.handler(handler, reply -> {
+            handler.handle(Future.succeededFuture(new WriteResult(reply.getDocuments().get(0))));
+        });
     }
 }

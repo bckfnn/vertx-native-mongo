@@ -11,6 +11,11 @@ import com.github.bckfnn.mongodb.msg.Insert;
 import com.github.bckfnn.mongodb.msg.Query;
 import com.github.bckfnn.mongodb.msg.Reply;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.streams.ReadStream;
+
 
 /**
  * aggregate
@@ -35,12 +40,12 @@ import com.github.bckfnn.mongodb.msg.Reply;
  * tag_sets
  * uuid_subtype
  * write_concern
- * 
+ *
  * @author INN
  *
  */
 public class Collection {
-	
+
     private final Database database;
     private final String collectionName;
 
@@ -52,16 +57,16 @@ public class Collection {
     public String name() {
     	return collectionName;
     }
-    
+
     public String fullname() {
     	return database.name() + "." + name();
     }
-    
+
     public Database database() {
     	return database;
     }
-    
-    public void insert(List<BsonDoc> documents, WriteConcern concern, final Callback<WriteResult> callback) {
+
+    public void insert(List<BsonDoc> documents, WriteConcern concern, final Handler<AsyncResult<WriteResult>> handler) {
         //WriteResult last = null;
 
         int cur = 0;
@@ -85,74 +90,66 @@ public class Collection {
             }
             insert.setDocuments(part);
 
-            database.execute(insert, concern, WriteResult.result(callback));
+            database.execute(insert, concern, WriteResult.result(handler));
         }
     }
 
-    public void update(BsonDoc q, BsonDoc o, boolean upsert, boolean multi, WriteConcern concern, Callback<WriteResult> callback) {
+    public void update(BsonDoc q, BsonDoc o, boolean upsert, boolean multi, WriteConcern concern, Handler<AsyncResult<WriteResult>> handler) {
     }
 
-    public void remove(BsonDoc o, WriteConcern concern, final Callback<WriteResult> callback) {
+    public void remove(BsonDoc o, WriteConcern concern, final Handler<AsyncResult<WriteResult>> handler) {
         Delete delete = new Delete();
         delete.setCollectionName(fullname());
         delete.setSelector(o);
 
-        database.execute(delete, concern, WriteResult.result(callback));
+        database.execute(delete, concern, WriteResult.result(handler));
     }
 
-    public void findOne(String obj, BsonDoc fields, final Callback<BsonDoc> handler) {
+    public void findOne(String obj, BsonDoc fields, final Handler<AsyncResult<BsonDoc>> handler) {
         BsonDoc queryDoc = BsonBuilder.doc().
                 put("_id", obj).get();
         findOne(queryDoc, fields, handler);
     }
-    
-    public void findOne(BsonDoc queryDoc, BsonDoc fields, final Callback<BsonDoc> handler) {
-        __find(queryDoc, fields, 0, -1, new Callback.Default<BsonDoc>(handler) {
-            int cnt = 0;
-            @Override
-            public void handle(BsonDoc result) {
-                if (cnt++ == 0) {
-                    handler.handle(result);
-                }
-            }
-        });
+
+    public void findOne(BsonDoc queryDoc, BsonDoc fields, final Handler<AsyncResult<BsonDoc>> handler) {
+        __find(queryDoc, fields, 0, -1, Utils.one(handler, result -> {
+            handler.handle(Future.succeededFuture(result));
+        }));
     }
-    public void indexInformation(Callback<BsonDoc> callback) {
+
+    public void indexInformation(Handler<ReadStream<BsonDoc>> handler) {
         BsonDoc query = BsonBuilder.doc().
                 put("ns", fullname()).get();
 
         BsonDoc fields = BsonBuilder.doc().put("ns", 0).get();
-        
-        database.collection("system.indexes").__find(query, fields, 0, 100, callback);
+
+        database.collection("system.indexes").__find(query, fields, 0, 100, handler);
     }
 
-    public void createIndex(BsonDoc keys, BsonDoc options, Callback<Void> callback) {
+    public void createIndex(BsonDoc keys, BsonDoc options, Handler<AsyncResult<Void>> handler) {
 
     }
 
-    public void dropIndexes(String name, Callback<BsonDoc> callback) {
-        dropIndex("*", callback);
+    public void dropIndexes(String name, Handler<AsyncResult<BsonDoc>> handler) {
+        dropIndex("*", handler);
     }
 
-    public void dropIndex(String name, Callback<BsonDoc> callback) {
+    public void dropIndex(String name, Handler<AsyncResult<BsonDoc>> handler) {
         BsonDoc cmd = BsonBuilder.doc().
                 put("dropIndexes", collectionName).
                 put("index", name).get();
-        database.command(cmd, 0, 1, callback);
+        database.command(cmd, 0, 1, handler);
     }
 
-    public void count(final Callback<Long> handler) {
+    public void count(final Handler<AsyncResult<Long>> handler) {
 
         BsonDoc queryDoc = BsonBuilder.doc().
                 put("count", collectionName).
                 get();
 
-        database.command(queryDoc, 0, 1, new Callback.Default<BsonDoc>(handler) {
-            @Override
-            public void handle(BsonDoc result) {
-                handler.handle((long) result.getDouble("n"));
-            }
-        });
+        database.command(queryDoc, 0, 1, Utils.handler(handler, result -> {
+            handler.handle(Future.succeededFuture((long) result.getInt("n")));
+        }));
     }
 
     public Query makeQuery(BsonDoc ref, BsonDoc fields, int skip, int size) {
@@ -166,18 +163,24 @@ public class Collection {
         return queryCmd;
     }
 
-    public void __find(BsonDoc ref, BsonDoc fields, int skip, final int size, final Callback<BsonDoc> handler) {
+    public void __find(BsonDoc ref, BsonDoc fields, int skip, int size, Handler<ReadStream<BsonDoc>> stream) {
         Query queryCmd = makeQuery(ref, fields, skip, size);
 
-        database.execute(queryCmd, null, new Callback.Default<Reply>(handler) {
+        Utils.ElementReadStream<BsonDoc> rs = new Utils.ElementReadStream<>();
+        stream.handle(rs);
+        database.execute(queryCmd, null, new Handler<AsyncResult<Reply>>() {
             @Override
-            public void handle(Reply reply) {
+            public void handle(AsyncResult<Reply> result) {
+                if (result.failed()) {
+                    //rs.fail(result.cause());
+                }
                 //System.out.println(reply.getCursorID());
+                Reply reply = result.result();
             	for (int i = 0; i < reply.getNumberReturned(); i++) {
-            		handler.handle(reply.getDocuments().get(i));
+            		rs.send(reply.getDocuments().get(i));
             	}
             	if (reply.getCursorID() == 0) {
-            	    handler.end();
+            	    rs.end();
             	} else {
             	    GetMore getMore =  new GetMore();
             	    getMore.setCursorId(reply.getCursorID());
@@ -186,11 +189,6 @@ public class Collection {
             	    database.execute(getMore, null, this);
             	}
             }
-
-            @Override
-            public void end() {
-            }
-            
         });
     }
 }

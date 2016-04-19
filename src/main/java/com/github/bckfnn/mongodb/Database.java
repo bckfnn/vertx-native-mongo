@@ -6,65 +6,59 @@ import com.github.bckfnn.mongodb.msg.OutMessage;
 import com.github.bckfnn.mongodb.msg.Query;
 import com.github.bckfnn.mongodb.msg.Reply;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.streams.ReadStream;
+
 
 public class Database {
 	Client client;
 	String name;
-	
+
 	public Database(Client client, String name) {
 		this.client = client;
 		this.name = name;
 	}
-	
+
 	public String name() {
 		return name;
 	}
-	
+
 	public Client getClient() {
 	    return client;
 	}
-	
+
     public Collection collection(String collectionName) {
         return new Collection(this, collectionName);
     }
-    
-    public void collectionsInfo(Callback<BsonDoc> handler) {
+
+    public void collectionsInfo(Handler<ReadStream<BsonDoc>> handler) {
         BsonDoc queryDoc = BsonBuilder.doc().get();
-    	collection("system.namespaces").__find(queryDoc, null, 0, 10, handler);
+    	collection("system.namespaces").__find(queryDoc, null, 0, 10, Utils.each(handler, (func, doc) -> {
+    	    func.accept(doc);
+    	}));
     }
 
-    public void collectionNames(final Callback<String> handler) {
-    	collectionsInfo(new Callback<BsonDoc>() {
-			@Override
-			public void handle(BsonDoc result) {
-			    String cname = result.getString("name").substring(name.length() + 1);
-			    if (cname.indexOf('.') < 0) {
-			        handler.handle(cname);
-			    }
-			}
-
-			@Override
-			public void error(Throwable error) {
-				handler.error(error);
-			}
-
-			@Override
-			public void end() {
-				handler.end();
-			}
-    	});
-    }
-    
-    public void dropDatabase(final Callback<BsonDoc> callback) {
-        command("dropDatabase", 0, 1, callback);
+    public void collectionNames(Handler<ReadStream<String>> handler) {
+    	collectionsInfo(Utils.each(handler, (func, doc) -> {
+		    String cname = doc.getString("name").substring(name.length() + 1);
+		    if (cname.indexOf('.') < 0) {
+		        func.accept(cname);
+		    }
+    	}));
     }
 
-    public void createCollection(String name, Callback<BsonDoc> callback) {
+    public void dropDatabase(Handler<AsyncResult<BsonDoc>> handler) {
+        command("dropDatabase", 0, 1, handler);
+    }
+
+    public void createCollection(String name, Handler<AsyncResult<BsonDoc>> handler) {
         BsonDoc cmd = BsonBuilder.doc().put("create", name).get();
-        command(cmd, 0, 1, callback);
+        command(cmd, 0, 1, handler);
     }
-	
-    public void execute(OutMessage msg, WriteConcern concern, final Callback<Reply> handler) {
+
+    public void execute(OutMessage msg, WriteConcern concern, Handler<AsyncResult<Reply>> handler) {
         Query lastError = null;
 
         if (concern != null && concern.callGetLastError()) {
@@ -74,24 +68,21 @@ public class Database {
         client.write(msg, lastError, handler);
     }
 
-    public void command(final BsonDoc cmd, final int skip, final int size, final Callback<BsonDoc> handler) {
-        collection("$cmd").__find(cmd, null, skip, size, new Callback.Default<BsonDoc>(handler) {
-			@Override
-			public void handle(BsonDoc result) {
-				if (result.getDouble("ok") == 1) {
-					handler.handle(result);
-				} else {
-				    handler.error(new Error(result.getString("err")));
-				}
+    public void command(final BsonDoc cmd, final int skip, final int size, final Handler<AsyncResult<BsonDoc>> handler) {
+        collection("$cmd").__find(cmd, null, skip, size, Utils.one(handler, result -> {
+			if (result.getDouble("ok") == 1) {
+				handler.handle(Future.succeededFuture(result));
+			} else {
+			    handler.handle(Future.failedFuture(new Error(result.getString("err"))));
 			}
-        });
+        }));
     }
 
-    public void command(String cmd, final int skip, final int size, final Callback<BsonDoc> handler) {
+    public void command(String cmd, final int skip, final int size, final Handler<AsyncResult<BsonDoc>> handler) {
         BsonDoc cmdDoc = BsonBuilder.doc().put(cmd, 1).get();
         command(cmdDoc, skip, size, handler);
     }
-    
+
     /*
      * add_son_manipulator
      * add_user

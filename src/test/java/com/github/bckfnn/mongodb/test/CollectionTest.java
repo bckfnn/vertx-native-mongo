@@ -5,254 +5,133 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.Rule;
 import org.junit.Test;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
-import org.vertx.testtools.TestVerticle;
-import org.vertx.testtools.VertxAssert;
+import org.junit.runner.RunWith;
 
 import com.github.bckfnn.mongodb.Client;
 import com.github.bckfnn.mongodb.Collection;
 import com.github.bckfnn.mongodb.Database;
+import com.github.bckfnn.mongodb.Utils;
 import com.github.bckfnn.mongodb.WriteConcern;
-import com.github.bckfnn.mongodb.WriteResult;
 import com.github.bckfnn.mongodb.bson.BsonBuilder;
 import com.github.bckfnn.mongodb.bson.BsonDoc;
 
+import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.unit.junit.RunTestOnContext;
+import io.vertx.ext.unit.junit.VertxUnitRunner;
 
-public class CollectionTest extends TestVerticle {
+
+@RunWith(VertxUnitRunner.class)
+public class CollectionTest {
+
+    @Rule
+    public RunTestOnContext rule = new RunTestOnContext();
+
     @Test
-    public void testDatabases() throws InterruptedException {
-        final Utils.Seq<Client> seq = new Utils.Seq<>();
-        seq.add(Utils.open(getVertx(), seq));
-        seq.add(new Handler<Client>() {
-            @Override
-            public void handle(Client client) {
-                client.getDatabaseNames(new Utils.ToList<String>(new Utils.Success<List<String>>(seq) {
-                    @Override
-                    public void handle(List<String> result) {
-                        Collections.sort(result);
-                        //System.out.println(result);
-                    }
-                }));
-            }
-        });
-        seq.add(new Handler<Client>() {
-            public void handle(Client client) {
+    public void testDatabases(TestContext context) throws InterruptedException {
+        final Client client = new Client(rule.vertx(), "localhost", 27017);
+        client.open(context.asyncAssertSuccess($ -> {
+            client.getDatabaseNames(context.asyncAssertSuccess(list -> {
+                Collections.sort(list);
+
                 Collection collection = client.database("test_X").collection("coll");
 
                 List<BsonDoc> data = new ArrayList<>();
                 BsonDoc val = BsonBuilder.doc().put("a", "value").get();
                 data.add(val);
 
-                collection.insert(data, WriteConcern.SAFE, new Utils.Success<WriteResult>(seq) {
-                    @Override
-                    public void handle(WriteResult result) {
-                        VertxAssert.assertEquals(1, (int) result.getOk());
-                    }
-                });
-            };
-        });
-        seq.add(new Handler<Client>() {
-            @Override
-            public void handle(Client client) {
-                client.getDatabaseNames(new Utils.ToList<String>(new Utils.Success<List<String>>(seq) {
-                    @Override
-                    public void handle(List<String> result) {
-                        VertxAssert.assertTrue(result.contains("test_X"));
-                    }
+                collection.insert(data, WriteConcern.SAFE, context.asyncAssertSuccess(result -> {
+                    context.assertEquals(1, (int) result.getOk());
+
+                    client.getDatabaseNames(context.asyncAssertSuccess(list2 -> {
+                        context.assertTrue(list2.contains("test_X"));
+
+                        client.dropDatabase("test_X", context.asyncAssertSuccess(r -> {
+                            context.assertEquals(1.0, r.getDouble("ok"));
+
+                            client.getDatabaseNames(context.asyncAssertSuccess(list3 -> {
+                                context.assertFalse(list3.contains("test_X"));
+                            }));
+                        }));
+
+                    }));
                 }));
-            }
-        });
-        seq.add(new Handler<Client>() {
-            @Override
-            public void handle(Client client) {
-                client.dropDatabase("test_X", new Utils.Success<BsonDoc>(seq) {
-                    @Override
-                    public void handle(BsonDoc result) {
-                        VertxAssert.assertEquals(1.0, result.getDouble("ok"), 0);
-                    }
+
+
+            }));
+        }));
+    }
+
+
+    @Test
+    public void testCollections(TestContext context) throws InterruptedException {
+
+        final Client client = new Client(rule.vertx(), "localhost", 27017);
+        client.open(context.asyncAssertSuccess($ -> {
+            Database database =  client.database("test_Y");
+
+            database.dropDatabase(context.asyncAssertSuccess(doc -> {
+                context.assertEquals(1.0, doc.getDouble("ok"));
+
+                database.collectionNames(rs -> {
+                    Utils.collect(rs, context.asyncAssertSuccess(result -> {
+                        context.assertEquals(0, result.size());
+
+                        Collection collection = database.collection("coll");
+
+                        List<BsonDoc> data = new ArrayList<>();
+                        BsonDoc val = BsonBuilder.doc().put("a", "value").get();
+                        data.add(val);
+
+                        collection.insert(data, WriteConcern.SAFE, context.asyncAssertSuccess(writeResult -> {
+                            context.assertEquals(1, (int) writeResult.getOk());
+
+                            database.collectionNames(rs2 -> {
+                                Utils.collect(rs, context.asyncAssertSuccess(result2 -> {
+                                    context.assertEquals(1, result2.size());
+                                    context.assertEquals(Arrays.asList("coll"), result2);
+                                }));
+                            });
+                        }));
+                    }));
                 });
-            }
-        });
-        seq.add(new Handler<Client>() {
-            @Override
-            public void handle(Client client) {
-                client.getDatabaseNames(new Utils.ToList<String>(new Utils.Success<List<String>>(seq) {
-                    @Override
-                    public void handle(List<String> result) {
-                        VertxAssert.assertFalse(result.contains("test_X"));
-                    }
-                }));
-            }
-        });
-        seq.add(new Handler<Client>() {
-            @Override
-            public void handle(Client client) {
-                VertxAssert.testComplete();
-            }
-        });
-        seq.next();
+            }));
+
+        }));
     }
 
     @Test
-    public void testCollections() throws InterruptedException {
-        final Utils.Seq<Database> seq = new Utils.Seq<>();
-        seq.add(Utils.open(getVertx(), seq, "test_Y"));
-        seq.add(new Handler<Database>() {
-            @Override
-            public void handle(Database database) {
-                database.dropDatabase(new Utils.Success<BsonDoc>(seq) {
-                    @Override
-                    public void handle(BsonDoc result) {
-                        VertxAssert.assertEquals(1.0, result.getDouble("ok"), 0);
-                    }
-                });
-            }
-        });
-        seq.add(new Handler<Database>() {
-            @Override
-            public void handle(Database database) {
-                database.collectionNames(new Utils.ToList<String>(new Utils.Success<List<String>>(seq) {
-                    @Override
-                    public void handle(List<String> result) {
-                        VertxAssert.assertEquals(0, result.size());
-                    }
+    public void testInsert(TestContext context) throws InterruptedException {
+        final Client client = new Client(rule.vertx(), "localhost", 27017);
+        client.open(context.asyncAssertSuccess($ -> {
+            Database database =  client.database("test_Z");
+            database.dropDatabase(context.asyncAssertSuccess(doc -> {
+                context.assertEquals(1.0, doc.getDouble("ok"));
+
+                Collection collection = database.collection("coll");
+
+                BsonDoc val = BsonBuilder.doc().put("a", "value").get();
+
+                collection.insert(Arrays.asList(val), WriteConcern.SAFE, context.asyncAssertSuccess(writeResult -> {
+                    context.assertEquals(1, (int) writeResult.getOk());
+
+                    database.collection("coll").count(context.asyncAssertSuccess(count1 -> {
+                        context.assertEquals(1l, count1.longValue());
+
+                        BsonDoc val2 = BsonBuilder.doc().put("a", "value").get();
+
+                        collection.insert(Arrays.asList(val2), WriteConcern.SAFE, context.asyncAssertSuccess(writeResult2 -> {
+                            context.assertEquals(1, (int) writeResult2.getOk());
+
+                            database.collection("coll").count(context.asyncAssertSuccess(count2 -> {
+                                context.assertEquals(2l, count2.longValue());
+                            }));
+                        }));
+                    }));
                 }));
-            }
-        });
-        seq.add(new Handler<Database>() {
-            public void handle(Database database) {
-                Collection collection = database.collection("coll");
-
-                List<BsonDoc> data = new ArrayList<>();
-                BsonDoc val = BsonBuilder.doc().put("a", "value").get();
-                data.add(val);
-
-                collection.insert(data, WriteConcern.SAFE, new Utils.Success<WriteResult>(seq) {
-                    @Override
-                    public void handle(WriteResult result) {
-                        VertxAssert.assertEquals(1, (int) result.getOk());
-                    }
-                });
-            };
-        });
-        seq.add(new Handler<Database>() {
-            @Override
-            public void handle(Database database) {
-                database.collectionNames(new Utils.ToList<String>(new Utils.Success<List<String>>(seq) {
-                    @Override
-                    public void handle(List<String> result) {
-                        VertxAssert.assertEquals(1, result.size());
-                        VertxAssert.assertEquals(Arrays.asList("coll"), result);
-                    }
-                }));
-            }
-        });
-        seq.add(new Handler<Database>() {
-            @Override
-            public void handle(Database database) {
-                VertxAssert.testComplete();
-            }
-        });
-        seq.next();
+            }));
+        }));
     }
 
-    @Test
-    public void testInsert() throws InterruptedException {
-        final Utils.Seq<Database> seq = new Utils.Seq<>();
-        seq.add(Utils.open(getVertx(), seq, "test_Z"));
-        seq.add(new Handler<Database>() {
-            @Override
-            public void handle(Database database) {
-                database.dropDatabase(new Utils.Success<BsonDoc>(seq) {
-                    @Override
-                    public void handle(BsonDoc result) {
-                        VertxAssert.assertEquals(1.0, result.getDouble("ok"), 0);
-                    }
-                });
-            }
-        });
-        seq.add(new Handler<Database>() {
-            public void handle(Database database) {
-                Collection collection = database.collection("coll");
-
-                List<BsonDoc> data = new ArrayList<>();
-                BsonDoc val = BsonBuilder.doc().put("a", "value").get();
-                data.add(val);
-
-                collection.insert(data, WriteConcern.SAFE, new Utils.Success<WriteResult>(seq) {
-                    @Override
-                    public void handle(WriteResult result) {
-                        VertxAssert.assertEquals(1, (int) result.getOk());
-                    }
-                });
-            };
-        });
-        seq.add(new Handler<Database>() {
-            @Override
-            public void handle(Database database) {
-                database.collection("coll").count(new Utils.Success<Long>(seq) {
-                    @Override
-                    public void handle(Long result) {
-                        VertxAssert.assertEquals(1l, result.longValue());
-                    }
-                });
-            }
-        });
-        
-        seq.add(new Handler<Database>() {
-            public void handle(Database database) {
-                Collection collection = database.collection("coll");
-
-                List<BsonDoc> data = new ArrayList<>();
-                BsonDoc val = BsonBuilder.doc().put("a", "value").get();
-                data.add(val);
-
-                collection.insert(data, WriteConcern.SAFE, new Utils.Success<WriteResult>(seq) {
-                    @Override
-                    public void handle(WriteResult result) {
-                        VertxAssert.assertEquals(1, (int) result.getOk());
-                    }
-                });
-            };
-        });
-        seq.add(new Handler<Database>() {
-            @Override
-            public void handle(Database database) {
-                database.collection("coll").count(new Utils.Success<Long>(seq) {
-                    @Override
-                    public void handle(Long result) {
-                        VertxAssert.assertEquals(2l, result.longValue());
-                    }
-                });
-            }
-        });
-        seq.add(new Handler<Database>() {
-            @Override
-            public void handle(Database database) {
-                VertxAssert.testComplete();
-            }
-        });
-        seq.next();
-    }
-
-
-
-
-
-    void open(final Handler<Client> handler) {
-        final Client client = new Client(getVertx(), "localhost", 27017);
-        client.open(new Handler<AsyncResult<Client>>() {
-            @Override
-            public void handle(AsyncResult<Client> event) {
-                VertxAssert.assertTrue(event.succeeded());
-                handler.handle(client);
-            }
-        });
-    }
-
- 
- 
- 
 }

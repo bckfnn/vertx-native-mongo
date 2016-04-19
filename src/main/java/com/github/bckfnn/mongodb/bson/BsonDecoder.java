@@ -1,6 +1,6 @@
 package com.github.bckfnn.mongodb.bson;
 
-import org.vertx.java.core.buffer.Buffer;
+import io.vertx.core.buffer.Buffer;
 
 public class BsonDecoder {
     private Buffer buffer;
@@ -14,13 +14,13 @@ public class BsonDecoder {
     public void setPos(int pos) {
         this.pos = pos;
     }
-    
+
     public static BsonDoc decode(Buffer buffer) {
         BsonDoc doc = new BsonDocMap();
         new BsonDecoder(buffer).loadDocument(doc);
         return doc;
     }
-    
+
     public Element readElement(int type) {
         int size;
 
@@ -72,7 +72,7 @@ public class BsonDecoder {
 
         case Element.INT64:
             return new BsonLong(int64());
-            
+
         case Element.MINKEY:
             return new BsonMinkey();
 

@@ -7,7 +7,6 @@ import java.util.Map;
 
 import org.bson.BasicBSONEncoder;
 import org.junit.Test;
-import org.vertx.java.core.json.JsonObject;
 
 import com.github.bckfnn.mongodb.bson.BsonArray;
 import com.github.bckfnn.mongodb.bson.BsonDoc;
@@ -16,6 +15,8 @@ import com.github.bckfnn.mongodb.bson.BsonDouble;
 import com.github.bckfnn.mongodb.bson.BsonEncoder;
 import com.github.bckfnn.mongodb.bson.BsonInt;
 import com.mongodb.BasicDBObject;
+
+import io.vertx.core.json.JsonObject;
 
 
 public class EncoderPerfTest {
@@ -41,7 +42,7 @@ public class EncoderPerfTest {
 		final BsonEncoder enc = new BsonEncoder();
 		enc.visitDocument(doc);
 		System.out.println(enc.getBuffer() + " " + enc.getBuffer().getClass());
-		
+
 		test(new Runnable() {
 			@Override
 			public void run() {
@@ -50,7 +51,7 @@ public class EncoderPerfTest {
 			}
 		}, 2000000);
 	}
-	
+
 	@Test
 	public void perfTest() throws Exception {
 
@@ -82,16 +83,16 @@ public class EncoderPerfTest {
 			}
 		}, 2000000);
 	}
-	
+
 
 
 	//@Test
 	public void copyTest() throws Exception {
 		final JsonObject map = new JsonObject();
-		map.putNumber("key1", 1);
-		map.putNumber("key2", 1l);
-		map.putString("key3", "abc");
-		
+		map.put("key1", 1);
+		map.put("key2", 1l);
+		map.put("key3", "abc");
+
 		test(new Runnable() {
 			@Override
 			public void run() {
@@ -99,8 +100,8 @@ public class EncoderPerfTest {
 			}
 		});
 	}
-	
-	
+
+
 	//@Test
 	public void copyTestMap() throws Exception {
 		final Map<String, Object> map = new HashMap<>();
@@ -115,7 +116,7 @@ public class EncoderPerfTest {
 		map.put("key9",  1);
 		map.put("key0",  1);
 		map.put("key10",  1);
-		
+
 		test(new Runnable() {
 			@Override
 			public void run() {
@@ -129,8 +130,8 @@ public class EncoderPerfTest {
 			}
 		});
 	}
-	
-	
+
+
 	//@Test
 	public void jsonTest() throws Exception {
 		final Map<String, Object> map = new HashMap<>();
@@ -157,9 +158,9 @@ public class EncoderPerfTest {
 	//@Test
 	public void jsonObjectTest() throws Exception {
 		final JsonObject map = new JsonObject();
-		map.putNumber("key1", 1);
-		map.putNumber("key2", 1l);
-		map.putString("key3", "abc");
+		map.put("key1", 1);
+		map.put("key2", 1l);
+		map.put("key3", "abc");
 		System.out.println(map.encode());
 		test(new Runnable() {
 			@Override
@@ -180,7 +181,7 @@ public class EncoderPerfTest {
 	private void test(Runnable run) {
 		test(run, 10000000);
 	}
-	
+
 	private void test(Runnable run, int cnt) {
 		for (int i = 0; i < cnt; i++) {
 			run.run();
@@ -198,7 +199,7 @@ public class EncoderPerfTest {
 		}
 		System.out.println(System.currentTimeMillis()  - t);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private Object copy(Object val) {
 		if (val == null) {
@@ -220,15 +221,15 @@ public class EncoderPerfTest {
 			}
 		}
 	}
-	
+
 	private Object copyMap(Map<String, Object> map) {
 		HashMap<String, Object> r = new HashMap<>();
 
-	
+
 		for (Map.Entry<String, Object> e : map.entrySet()) {
 			r.put(e.getKey(), copy(e.getValue()));
 		}
-	
+
 
 /*
 		for (String e : map.keySet()) {
@@ -237,7 +238,7 @@ public class EncoderPerfTest {
 */
 		return r;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private void encode(Object val, Output out) {
 		if (val == null) {
@@ -296,11 +297,11 @@ public class EncoderPerfTest {
 		}
 		out.append('}');
 	}
-	
+
 	static class Output {
 		char[] buffer = new char[40];
 		int pos = 0;
-		
+
 		public void append(char ch) {
 			buffer[pos++] = ch;
 		}

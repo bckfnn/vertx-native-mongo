@@ -1,10 +1,10 @@
 package com.github.bckfnn.mongodb.bson;
 
-import io.netty.buffer.Unpooled;
-
 import java.io.UnsupportedEncodingException;
 
-import org.vertx.java.core.buffer.Buffer;
+import io.netty.buffer.Unpooled;
+import io.vertx.core.buffer.Buffer;
+
 
 //import org.vertx.java.core.buffer.Buffer;
 
@@ -213,7 +213,7 @@ public class BsonEncoder implements Visitor {
     }
 
     int pos;
-    byte[] buffer = new byte[512]; 
+    byte[] buffer = new byte[512];
 
     public void appendByte(byte val) {
         ensureLength(1);
@@ -261,7 +261,7 @@ public class BsonEncoder implements Visitor {
     }
 
     public Buffer asBuffer() {
-        return new Buffer(Unpooled.wrappedBuffer(buffer, 0, pos));
+        return Buffer.buffer(Unpooled.wrappedBuffer(buffer, 0, pos));
     }
 
 }

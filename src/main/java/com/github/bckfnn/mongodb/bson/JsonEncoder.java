@@ -1,6 +1,6 @@
 package com.github.bckfnn.mongodb.bson;
 
-import org.vertx.java.core.buffer.Buffer;
+import io.vertx.core.buffer.Buffer;
 
 public class JsonEncoder implements Visitor {
     private Buffer buffer;
@@ -14,12 +14,12 @@ public class JsonEncoder implements Visitor {
     }
 
     public static Buffer encode(BsonDoc doc) {
-        Buffer buf = new Buffer();
+        Buffer buf = Buffer.buffer();
         new JsonEncoder(buf).visitDocument(doc);
         return buf;
     }
-    
-    
+
+
     @Override
     public void visitArray(String name, BsonArray element) {
         ename(name);

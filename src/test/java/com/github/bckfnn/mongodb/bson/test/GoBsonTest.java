@@ -2,19 +2,20 @@ package com.github.bckfnn.mongodb.bson.test;
 
 
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
+import java.util.Date;
+import java.util.regex.Pattern;
+
 import org.junit.Test;
-import org.vertx.java.core.buffer.Buffer;
 
 import com.github.bckfnn.mongodb.bson.BsonBuilder;
 import com.github.bckfnn.mongodb.bson.BsonDecoder;
 import com.github.bckfnn.mongodb.bson.BsonDoc;
 import com.github.bckfnn.mongodb.bson.BsonEncoder;
 
-import java.util.Date;
-import java.util.regex.Pattern;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import io.vertx.core.buffer.Buffer;
 
 /**
  * This class contains tests inspired from the gobson project.
@@ -32,21 +33,21 @@ public class GoBsonTest {
     @Test
     public void testEmptyMap() {
         BsonDoc empty = BsonBuilder.doc().get();
-        
+
         compare(empty, EMPTY_BSON);
     }
 
     @Test
     public void testFloat() {
         BsonDoc json = BsonBuilder.doc().put("_", 5.05).get();
-        
+
         byte[] expected = new byte[]{
                 // length
                 0x10, 0x0, 0x0, 0x0,
                 0x01, '_', 0x00, '3', '3', '3', '3', '3', '3', 0x14, '@',
                 // end
                 0x00};
-        
+
         compare(json, expected);
     }
 
@@ -112,7 +113,7 @@ public class GoBsonTest {
     @Test
     public void testNull() {
     	BsonDoc json = BsonBuilder.doc().putNull("_").get();
-    	
+
         byte[] expected = new byte[]{
                 // length
                 0x08, 0x00, 0x00, 0x00,
@@ -127,7 +128,7 @@ public class GoBsonTest {
     @Test
     public void testRegEx() {
     	BsonDoc json = BsonBuilder.doc().put("_", Pattern.compile("ab")).get();
-    	
+
         byte[] expected = new byte[]{
                 // length
                 0x0c, 0x00, 0x00, 0x00,
@@ -157,7 +158,7 @@ public class GoBsonTest {
     @Test
     public void testBinary() {
     	BsonDoc json = BsonBuilder.doc().put("_", new byte[]{'y', 'o'}).get();
-    
+
         byte[] expected = new byte[]{
                 // length
                 0x0f, 0x00, 0x00, 0x00,
@@ -202,7 +203,7 @@ public class GoBsonTest {
     @Test
     public void testInt64_2() {
     	BsonDoc json = BsonBuilder.doc().put("_", 258l << 32).get();
-    	
+
         byte[] expected = new byte[]{
                 // length
                 0x10, 0x00, 0x00, 0x00,
@@ -217,7 +218,7 @@ public class GoBsonTest {
     @Test
     public void testMinKey() {
     	BsonDoc json = BsonBuilder.doc().putMinKey("_").get();
-    	
+
         byte[] expected = new byte[]{
                 // length
                 0x08, 0x00, 0x00, 0x00,
@@ -243,14 +244,14 @@ public class GoBsonTest {
 
         compare(json, expected);
     }
-    
+
     private void compare(BsonDoc doc, byte[] expected) {
         Buffer buffer = BsonEncoder.encode(doc);
 
         assertArrayEquals(expected, buffer.getBytes());
 
         // reverse
-        BsonDoc document = BsonDecoder.decode(new Buffer(expected));
+        BsonDoc document = BsonDecoder.decode(Buffer.buffer(expected));
         assertEquals(doc, document);
     }
 }

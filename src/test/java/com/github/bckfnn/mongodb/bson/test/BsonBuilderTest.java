@@ -2,11 +2,12 @@ package com.github.bckfnn.mongodb.bson.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.vertx.java.core.buffer.Buffer;
 
 import com.github.bckfnn.mongodb.bson.BsonBuilder;
 import com.github.bckfnn.mongodb.bson.BsonDoc;
 import com.github.bckfnn.mongodb.bson.JsonEncoder;
+
+import io.vertx.core.buffer.Buffer;
 
 
 public class BsonBuilderTest {
@@ -18,7 +19,7 @@ public class BsonBuilderTest {
         Buffer b = JsonEncoder.encode(doc);
         Assert.assertEquals(b.toString(), "{\"hello\":\"world\"}");
     }
-    
+
 
     @Test
     public void docBooleans() {
@@ -43,7 +44,7 @@ public class BsonBuilderTest {
         Assert.assertEquals(Integer.MAX_VALUE, doc.getInt("max"));
         Assert.assertEquals(Integer.MIN_VALUE, doc.getInt("min"));
     }
-    
+
     @Test
     public void docLongs() {
         BsonDoc doc = BsonBuilder.doc().
@@ -57,7 +58,7 @@ public class BsonBuilderTest {
         Assert.assertEquals(Long.MAX_VALUE, doc.getLong("max"));
         Assert.assertEquals(Long.MIN_VALUE, doc.getLong("min"));
     }
-    
+
     @Test
     public void docDoubles() {
         BsonDoc doc = BsonBuilder.doc().
@@ -71,7 +72,7 @@ public class BsonBuilderTest {
         Assert.assertEquals(Double.MAX_VALUE, doc.getDouble("max"), 0);
         Assert.assertEquals(Double.MIN_VALUE, doc.getDouble("min"), 0);
     }
-    
+
     @Test
     public void docBinary() {
         BsonDoc doc = BsonBuilder.doc().
@@ -81,8 +82,8 @@ public class BsonBuilderTest {
         Assert.assertArrayEquals(new byte[0], doc.getBinary("empty"));
         Assert.assertArrayEquals(new byte[] { 1 }, doc.getBinary("one"));
     }
-    
-    @Test 
+
+    @Test
     public void subDoc() {
         BsonDoc doc = BsonBuilder.doc().
                 putDoc("_").
@@ -90,8 +91,8 @@ public class BsonBuilderTest {
                 get();
         Assert.assertEquals(doc.getDocument("_").getString("a"), "b");
     }
-    
-    @Test 
+
+    @Test
     public void subArray() {
         BsonDoc doc = BsonBuilder.doc().
                 putArray("_").
@@ -101,8 +102,8 @@ public class BsonBuilderTest {
         Assert.assertEquals(doc.getArray("_").getString(0), "a");
         Assert.assertEquals(doc.getArray("_").getString(1), "b");
     }
-    
-    @Test 
+
+    @Test
     public void subArrayArray() {
         BsonDoc doc = BsonBuilder.doc().
                 putArray("_").
@@ -113,8 +114,8 @@ public class BsonBuilderTest {
         Assert.assertEquals(doc.getArray("_").getDocument(0).getString("a"), "b");
         Assert.assertEquals(doc.getArray("_").getArray(1).getInt(0), 1);
     }
-    
-    @Test 
+
+    @Test
     public void subArrayTypes() {
         BsonDoc doc = BsonBuilder.doc().
                 putArray("_").
@@ -130,7 +131,7 @@ public class BsonBuilderTest {
         Assert.assertEquals(doc.getArray("_").getString(0), "a");
         Assert.assertEquals(doc.getArray("_").getInt(1), 1);
     }
-    
+
 }
 
 
