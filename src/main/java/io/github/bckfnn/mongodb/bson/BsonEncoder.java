@@ -1,14 +1,16 @@
 package io.github.bckfnn.mongodb.bson;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.buffer.Buffer;
 
 
 //import org.vertx.java.core.buffer.Buffer;
 
-public class BsonEncoder implements Visitor {
+final public class BsonEncoder implements Visitor {
 
     public BsonEncoder() {
     }
@@ -157,6 +159,7 @@ public class BsonEncoder implements Visitor {
     }
 
     public void visitDocument(BsonDoc element) {
+
         int pos = length();
         int32(0);
         if (element != null) {
@@ -166,6 +169,7 @@ public class BsonEncoder implements Visitor {
         }
         appendByte((byte) 0);
         int32(pos, length() - pos);
+
     }
 
     private void ename(String name) {
@@ -185,83 +189,45 @@ public class BsonEncoder implements Visitor {
     }
 
     public void int32(int value) {
-        appendInt(value); //Integer.reverseBytes(value));
-        /*
-        buffer.appendByte((byte) (value & 0xFF));
-        buffer.appendByte((byte) (value >> 8 & 0xFF));
-        buffer.appendByte((byte) (value >> 16 & 0xFF));
-        buffer.appendByte((byte) (value >> 24 & 0xFF));
-         */
+        b.writeInt(value); //Integer.reverseBytes(value));
     }
 
     public void int32(int pos, int value) {
-        setByte(pos++, (byte) (value & 0xFF));
-        setByte(pos++, (byte) (value >> 8 & 0xFF));
-        setByte(pos++, (byte) (value >> 16 & 0xFF));
-        setByte(pos++, (byte) (value >> 24 & 0xFF));
+        b.setInt(pos, value);
     }
 
     public void int64(long value) {
-        appendByte((byte) (value & 0xFF));
-        appendByte((byte) (value >> 8 & 0xFF));
-        appendByte((byte) (value >> 16 & 0xFF));
-        appendByte((byte) (value >> 24 & 0xFF));
-        appendByte((byte) (value >> 32 & 0xFF));
-        appendByte((byte) (value >> 40 & 0xFF));
-        appendByte((byte) (value >> 48 & 0xFF));
-        appendByte((byte) (value >> 56 & 0xFF));
+        b.writeLong(value);
     }
 
-    int pos;
-    byte[] buffer = new byte[512];
+    final ByteBuf b = Unpooled.buffer(256).order(ByteOrder.LITTLE_ENDIAN);
 
     public void appendByte(byte val) {
-        ensureLength(1);
-        buffer[pos++] = val;
+        b.writeByte(val);
     }
 
     public void appendBytes(byte[] val) {
-        int len = val.length;
-        ensureLength(len);
-        System.arraycopy(val,  0, buffer, pos, len);
-        pos += len;
+        b.writeBytes(val);
     }
 
     public void appendString(String val) {
-        try {
-            appendBytes(val.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        appendBytes(val.getBytes(StandardCharsets.UTF_8));
     }
 
     public void appendInt(int val) {
-        ensureLength(4);
-
-        buffer[pos++] = (byte) (val >> 0);
-        buffer[pos++] = (byte) (val >> 8);
-        buffer[pos++] = (byte) (val >> 16);
-        buffer[pos++] = (byte) (val >> 24);
+        b.writeInt(val);
     }
 
     public void setByte(int pos, byte val) {
-        buffer[pos] = val;
+        b.setByte(pos, val);
     }
 
     public int length() {
-        return pos;
-    }
-
-    private void ensureLength(int len) {
-        if (pos + len > buffer.length) {
-            byte[] b = buffer;
-            buffer = new byte[buffer.length + 128];
-            System.arraycopy(b, 0, buffer, 0, pos);
-        }
+        return b.writerIndex();
     }
 
     public Buffer asBuffer() {
-        return Buffer.buffer(Unpooled.wrappedBuffer(buffer, 0, pos));
+        return Buffer.buffer(b);
     }
 
 }

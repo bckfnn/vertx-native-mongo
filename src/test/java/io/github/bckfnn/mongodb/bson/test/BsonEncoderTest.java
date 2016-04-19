@@ -1,14 +1,7 @@
 package io.github.bckfnn.mongodb.bson.test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import junit.framework.Assert;
-
-import org.bson.BasicBSONEncoder;
+import org.junit.Assert;
 import org.junit.Test;
-
-import com.mongodb.BasicDBObject;
 
 import io.github.bckfnn.mongodb.bson.BsonArray;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
@@ -47,7 +40,7 @@ public class BsonEncoderTest {
         arr.add(new BsonInt(43));
         arr.add(new BsonDouble(43));
         doc.putArray("array", arr);
-
+/*
         BasicDBObject doc1 = new BasicDBObject();
         doc1.put("string", "String value");
         doc1.put("int", 42);
@@ -68,7 +61,7 @@ public class BsonEncoderTest {
         System.out.println(doc1.toString());
 
         test(doc, hex(new BasicBSONEncoder().encode(doc1)));
-
+*/
     }
 
     private void test(BsonDoc doc, String expected) {

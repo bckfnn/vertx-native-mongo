@@ -1,14 +1,20 @@
 package io.github.bckfnn.mongodb.bson.test;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-import org.bson.BasicBSONEncoder;
-import org.junit.Test;
-
-import com.mongodb.BasicDBObject;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import io.github.bckfnn.mongodb.bson.BsonArray;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
@@ -16,42 +22,45 @@ import io.github.bckfnn.mongodb.bson.BsonDocMap;
 import io.github.bckfnn.mongodb.bson.BsonDouble;
 import io.github.bckfnn.mongodb.bson.BsonEncoder;
 import io.github.bckfnn.mongodb.bson.BsonInt;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
-
+@Fork(5)
+@Warmup(iterations = 5)
+@Measurement(iterations = 10)
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.SECONDS)
+@State(Scope.Benchmark)
 public class EncoderPerfTest {
-	@Test
-	public void bsonTest() throws Exception {
-		final BsonDoc doc = new BsonDocMap();
-		doc.putString("string", "String value");
-		doc.putInt("int", 42);
-		doc.putLong("long", 42424242L);
-		doc.putDouble("double", 42.42);
-		doc.putBoolean("booleanTrue", true);
-		doc.putBoolean("booleanFalse", false);
+    BsonDoc doc;
 
-		BsonDoc sub = new BsonDocMap();
-		sub.putString("sub", "sub value");
-		doc.putDocument("subdoc", sub);
+    @Setup
+    public void setup() throws IOException {
+        final BsonDoc doc = new BsonDocMap();
+        doc.putString("string", "String value");
+        doc.putInt("int", 42);
+        doc.putLong("long", 42424242L);
+        doc.putDouble("double", 42.42);
+        doc.putBoolean("booleanTrue", true);
+        doc.putBoolean("booleanFalse", false);
 
-		BsonArray arr = new BsonArray();
-		arr.add(new BsonInt(43));
-		arr.add(new BsonDouble(43));
-		doc.putArray("array", arr);
+        BsonDoc sub = new BsonDocMap();
+        sub.putString("sub", "sub value");
+        doc.putDocument("subdoc", sub);
 
-		final BsonEncoder enc = new BsonEncoder();
-		enc.visitDocument(doc);
-		System.out.println(enc.getBuffer() + " " + enc.getBuffer().getClass());
+        BsonArray arr = new BsonArray();
+        arr.add(new BsonInt(43));
+        arr.add(new BsonDouble(43));
+        doc.putArray("array", arr);
+    }
 
-		test(new Runnable() {
-			@Override
-			public void run() {
-				 BsonEncoder enc = new BsonEncoder();
-				 enc.visitDocument(doc);
-			}
-		}, 2000000);
+    @Benchmark
+	public Buffer bsonTest() throws Exception {
+        BsonEncoder enc = new BsonEncoder();
+        enc.visitDocument(doc);
+        return enc.asBuffer();
 	}
-
+/*
 	@Test
 	public void perfTest() throws Exception {
 
@@ -83,7 +92,7 @@ public class EncoderPerfTest {
 			}
 		}, 2000000);
 	}
-
+*/
 
 
 	//@Test

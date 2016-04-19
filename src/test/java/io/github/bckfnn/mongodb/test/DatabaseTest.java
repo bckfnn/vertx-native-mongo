@@ -31,7 +31,7 @@ public class DatabaseTest {
     public void testDropDatabase2(TestContext context) throws InterruptedException {
         final Client client = new Client(rule.vertx(), "localhost", 27017);
         client.open(context.asyncAssertSuccess($ -> {
-            Database db = client.database("doesnotexists");
+            Database db = client.database("testdatabase1");
 
             db.dropDatabase(context.asyncAssertSuccess(result -> {
                 db.createCollection("testcollection", context.asyncAssertSuccess(result2 -> {
@@ -39,7 +39,7 @@ public class DatabaseTest {
                         context.assertTrue(list.contains("testdatabase1"));
                         db.dropDatabase(context.asyncAssertSuccess(result3 -> {
                             db.getClient().getDatabaseNames(context.asyncAssertSuccess(list2 -> {
-                                context.assertFalse(list.contains("testdatabase1"));
+                                context.assertFalse(list2.contains("testdatabase1"));
                             }));
                         }));
                     }));

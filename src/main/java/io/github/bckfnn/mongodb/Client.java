@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.mongodb.MongoException;
-
 import io.github.bckfnn.mongodb.bson.BsonBuilder;
 import io.github.bckfnn.mongodb.bson.BsonDecoder;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
