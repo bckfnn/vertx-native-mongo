@@ -1,3 +1,18 @@
+/*
+ * Copyright 2016 Finn Bock
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.github.bckfnn.mongodb.msg;
 
 import io.github.bckfnn.mongodb.bson.BsonDecoder;
@@ -11,7 +26,7 @@ public abstract class InMessage {
     protected static final int OP_QUERY = 2004; // query a collection
     protected static final int OP_GETMORE = 2005; // Get more data from a query. See Cursors
     protected static final int OP_DELETE = 2006; // Delete documents
-    protected static final int OP_KILL_CURSORS = 2007; // Tell database client is done with a cursor  
+    protected static final int OP_KILL_CURSORS = 2007; // Tell database client is done with a cursor
 
     protected int size;
     protected int requestId;

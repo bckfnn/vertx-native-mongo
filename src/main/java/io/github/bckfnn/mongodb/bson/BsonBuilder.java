@@ -1,3 +1,18 @@
+/*
+ * Copyright 2016 Finn Bock
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.github.bckfnn.mongodb.bson;
 
 import java.util.Date;
@@ -7,7 +22,7 @@ import java.util.regex.Pattern;
 public class BsonBuilder {
     private BsonBuilder parent;
     private Element element;
-    
+
     public BsonBuilder(Element element) {
         this.element = element;
     }
@@ -40,32 +55,32 @@ public class BsonBuilder {
         topdoc().putBoolean(name, value);
         return this;
     }
-    
+
     public BsonBuilder put(String name, double value) {
         topdoc().putDouble(name, value);
         return this;
     }
-    
+
     public BsonBuilder put(String name, Date value) {
         topdoc().putDate(name, value);
         return this;
     }
-    
+
     public BsonBuilder put(String name, byte[] value) {
         topdoc().putBinary(name, value);
         return this;
     }
-    
+
     public BsonBuilder put(String name, Pattern value) {
         topdoc().putPattern(name, value);
         return this;
     }
-    
+
     public BsonBuilder putNull(String name) {
         topdoc().putNull(name);
         return this;
     }
-    
+
     public BsonBuilder putMinKey(String name) {
         topdoc().putMinkey(name);
         return this;
@@ -117,7 +132,7 @@ public class BsonBuilder {
         toparray().addNull();
         return this;
     }
-    
+
     public BsonBuilder appendMinkey() {
         toparray().addMinkey();
         return this;
@@ -128,7 +143,7 @@ public class BsonBuilder {
         return this;
     }
 
-    
+
     public BsonBuilder appendArray() {
         BsonArray arr = new BsonArray();
         toparray().add(arr);
@@ -140,7 +155,7 @@ public class BsonBuilder {
         toparray().add(doc);
         return new BsonBuilder(this, doc);
     }
-    
+
     @SuppressWarnings("unchecked")
     public <T> T get() {
         if (parent == null) {
@@ -149,7 +164,7 @@ public class BsonBuilder {
             return parent.get();
         }
     }
-    
+
     public BsonDoc topdoc() {
         return (BsonDoc) element;
     }

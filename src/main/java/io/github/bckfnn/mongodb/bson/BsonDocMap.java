@@ -1,3 +1,18 @@
+/*
+ * Copyright 2016 Finn Bock
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.github.bckfnn.mongodb.bson;
 
 import java.util.Date;
@@ -69,7 +84,7 @@ public class BsonDocMap implements BsonDoc {
     public Date getDate(String name) {
         return new Date(get(BsonDatetime.class, name).getValue());
     }
-    
+
     @Override
     public void putBinary(String name, byte[] value) {
         put(name, new BsonBinary((byte) 0, value));
@@ -79,7 +94,7 @@ public class BsonDocMap implements BsonDoc {
     public byte[] getBinary(String name) {
         return get(BsonBinary.class, name).getValue();
     }
-    
+
     @Override
     public void putPattern(String name, Pattern value) {
         put(name, new BsonRegex(value.pattern(), ""));
@@ -89,12 +104,12 @@ public class BsonDocMap implements BsonDoc {
     public Pattern getPattern(String name) {
         return Pattern.compile(get(BsonRegex.class, name).getValue(), 0);
     }
-    
+
     @Override
     public void putNull(String name) {
         put(name, new BsonNull());
     }
-    
+
     @Override
     public void putMinkey(String name) {
         put(name, new BsonMinkey());
@@ -136,16 +151,19 @@ public class BsonDocMap implements BsonDoc {
         return null;
     }
 
+    @Override
     public Element get(String name) {
         init();
         return elements.get(name);
     }
 
+    @Override
     public void put(String name, Element element) {
         init();
         elements.put(name, element);
     }
 
+    @Override
     public Set<String> getFields() {
         init();
         return elements.keySet();
@@ -199,7 +217,7 @@ public class BsonDocMap implements BsonDoc {
             return false;
         return true;
     }
-    
-    
+
+
 
 }
