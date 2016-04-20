@@ -17,7 +17,7 @@ package io.github.bckfnn.mongodb.bson.test;
 
 import org.junit.Test;
 
-import io.github.bckfnn.mongodb.bson.BsonArray;
+import io.github.bckfnn.mongodb.bson.BsonArrayList;
 import io.github.bckfnn.mongodb.bson.BsonBinary;
 import io.github.bckfnn.mongodb.bson.BsonBoolean;
 import io.github.bckfnn.mongodb.bson.BsonDatetime;
@@ -42,7 +42,7 @@ public class BsonTest {
         Element[] elems = {
                 new BsonInt(1),
                 new BsonLong(1L),
-                new BsonArray(new BsonInt(1), new BsonString("abc")),
+                new BsonArrayList(new BsonInt(1), new BsonString("abc")),
                 new BsonBinary((byte) 0, new byte[] { 0, 1, 2}),
                 new BsonBoolean(true),
                 new BsonDatetime(1000l),

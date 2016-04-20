@@ -19,11 +19,8 @@ final public class BsonDocLazy extends BsonDocMap {
     private BsonDecoder decoder;
     private int pos;
 
-    public BsonDocLazy(BsonDecoder decoder, int pos) {
-        this.decoder = decoder;
-        this.pos = pos;
+    public BsonDocLazy() {
     }
-
 
     @Override
     protected void init() {
@@ -45,9 +42,8 @@ final public class BsonDocLazy extends BsonDocMap {
     @Override
     public void decode(BsonDecoder dec) {
         this.decoder = dec;
-        //this.pos = dec.getPos();
+        this.pos = dec.getPos();
         int size = dec.int32() - 4;
-        //dec.setPos(dec.getPos() + size);
+        dec.setPos(dec.getPos() + size);
     }
-
 }

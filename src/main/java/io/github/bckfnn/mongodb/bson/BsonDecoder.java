@@ -34,6 +34,10 @@ final public class BsonDecoder {
         this.pos = pos;
     }
 
+    public int getPos() {
+        return pos;
+    }
+
     public static BsonDoc decode(Buffer buffer) {
         BsonDoc doc = new BsonDocMap();
         new BsonDecoder(buffer).loadDocument(doc);
@@ -51,17 +55,13 @@ final public class BsonDecoder {
             return new BsonString(string());
 
         case Element.DOCUMENT:
-            //size = int32() - 4;
             BsonDoc doc = new BsonDocMap();
             loadDocument(doc);
-            //pos += size;
             return doc;
 
         case Element.ARRAY:
-            //size = int32() - 4;
-            BsonArray arr = new BsonArray();
-            loadArray(arr);
-            //pos += size;
+            BsonArray arr = new BsonArrayList();
+            arr.decode(this);
             return arr;
 
         case Element.BINARY:

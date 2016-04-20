@@ -92,7 +92,7 @@ public class BsonBuilder {
     }
 
     public BsonBuilder putArray(String name) {
-        BsonArray arr = new BsonArray();
+        BsonArray arr = new BsonArrayList();
         topdoc().putArray(name, arr);
         return new BsonBuilder(this, arr);
     }
@@ -145,7 +145,7 @@ public class BsonBuilder {
 
 
     public BsonBuilder appendArray() {
-        BsonArray arr = new BsonArray();
+        BsonArray arr = new BsonArrayList();
         toparray().add(arr);
         return new BsonBuilder(this, arr);
     }

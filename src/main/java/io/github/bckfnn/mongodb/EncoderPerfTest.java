@@ -45,6 +45,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import io.github.bckfnn.mongodb.bson.BsonArray;
+import io.github.bckfnn.mongodb.bson.BsonArrayList;
 import io.github.bckfnn.mongodb.bson.BsonDecoder;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.github.bckfnn.mongodb.bson.BsonDocMap;
@@ -78,7 +79,7 @@ public class EncoderPerfTest {
         sub.putString("sub", "sub value");
         doc.putDocument("subdoc", sub);
 
-        BsonArray arr = new BsonArray();
+        BsonArray arr = new BsonArrayList();
         arr.add(new BsonInt(43));
         arr.add(new BsonDouble(43));
         doc.putArray("array", arr);

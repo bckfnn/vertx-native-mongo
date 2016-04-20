@@ -15,25 +15,30 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-import io.vertx.core.buffer.Buffer;
-
-public class BsonArrayLazy extends BsonArray {
-    private Buffer buffer;
-
-    public BsonArrayLazy(Buffer buffer) {
-        this.buffer = buffer;
+public class BsonArrayLazy extends BsonArrayList {
+    private BsonDecoder decoder;
+    private int pos;
+    
+    public BsonArrayLazy() {
     }
 
     @Override
     protected void init() {
-        if (buffer == null) {
+        if (decoder == null) {
             return;
         }
-        Buffer b = buffer;
-        buffer = null;
 
-        BsonDecoder dec = new BsonDecoder(b);
+        BsonDecoder dec = decoder;
+        decoder = null;
+        dec.setPos(pos);
         dec.loadArray(this);
     }
-
+    
+    @Override
+    public void decode(BsonDecoder dec) {
+        this.decoder = dec;
+        this.pos = dec.getPos();
+        int size = dec.int32() - 4;
+        dec.setPos(dec.getPos() + size);
+    }
 }
