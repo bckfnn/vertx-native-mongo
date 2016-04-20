@@ -190,7 +190,6 @@ public class Client {
      * Unlocks the database, allowing the write operations to go through.
      * This command may be asynchronous on the server, which means there may be a small delay before the database becomes writable.
      * @param handler
-     * @throws MongoException
      */
     public void unlock(Handler<AsyncResult<BsonDoc>> handler) {
         Database admin = database("admin");
