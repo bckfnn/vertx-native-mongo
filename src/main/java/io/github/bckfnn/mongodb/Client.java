@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.github.bckfnn.mongodb.bson.BsonBuilder;
 import io.github.bckfnn.mongodb.bson.BsonDecoder;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.github.bckfnn.mongodb.bson.BsonEncoder;
@@ -161,15 +160,20 @@ public class Client {
 
 
     public void fsync(boolean async, Handler<AsyncResult<BsonDoc>> handler) {
-        BsonDoc cmd = BsonBuilder.doc().put("fsync", 1).get();
-        if (async) {
-            cmd.putInt("async", 1);
-        }
+        BsonDoc cmd = BsonDoc.newDoc(n -> {
+            n.put("fsync", 1);
+            if (async) {
+                n.put("async", 1);
+            }
+        });
         database("admin").command(cmd, 0, 1, handler);
     }
 
     public void fsyncAndLock(Handler<AsyncResult<BsonDoc>> handler) {
-        BsonDoc cmd = BsonBuilder.doc().put("fsync", 1).put("lock", 1).get();
+        BsonDoc cmd = BsonDoc.newDoc(d -> {
+            d.put("fsync", 1);
+            d.put("lock", 1);
+        });
 
         database("admin").command(cmd, 0, 1, handler);
     }
@@ -251,5 +255,4 @@ public class Client {
     public int getMaxBsonSize() {
         return maxBsonSize;
     }
-
 }

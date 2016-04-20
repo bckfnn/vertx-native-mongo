@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 
 import org.junit.Test;
 
-import io.github.bckfnn.mongodb.bson.BsonBuilder;
 import io.github.bckfnn.mongodb.bson.BsonDecoder;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.github.bckfnn.mongodb.bson.BsonEncoder;
@@ -44,14 +43,14 @@ public class GoBsonTest {
 
     @Test
     public void testEmptyMap() {
-        BsonDoc empty = BsonBuilder.doc().get();
+        BsonDoc empty = BsonDoc.newDoc(d -> {});
 
         compare(empty, EMPTY_BSON);
     }
 
     @Test
     public void testFloat() {
-        BsonDoc json = BsonBuilder.doc().put("_", 5.05).get();
+        BsonDoc json = BsonDoc.newDoc(d -> d.put("_", 5.05));
 
         byte[] expected = new byte[]{
                 // length
@@ -65,7 +64,7 @@ public class GoBsonTest {
 
     @Test
     public void testString() {
-        BsonDoc json = BsonBuilder.doc().put("_", "yo").get();
+        BsonDoc json = BsonDoc.newDoc(d -> d.put("_", "yo"));
 
         byte[] expected = new byte[]{
                 // length
@@ -79,7 +78,11 @@ public class GoBsonTest {
 
     @Test
     public void testSubDocumentBoolean() {
-        BsonDoc json = BsonBuilder.doc().putDoc("_").put("a", true).get();
+        BsonDoc json = BsonDoc.newDoc(d -> {
+            d.putDoc("_", d2 -> {
+                d2.put("a", true);
+            });
+        });
         System.out.println(json);
         byte[] expected = new byte[]{
                 // length
@@ -94,7 +97,7 @@ public class GoBsonTest {
 
     @Test
     public void testTrue() {
-    	BsonDoc json = BsonBuilder.doc().put("_", true).get();
+    	BsonDoc json = BsonDoc.newDoc(d -> d.put("_", true));
 
         byte[] expected = new byte[]{
                 // length
@@ -109,7 +112,7 @@ public class GoBsonTest {
 
     @Test
     public void testFalse() {
-    	BsonDoc json = BsonBuilder.doc().put("_", false).get();
+    	BsonDoc json = BsonDoc.newDoc(d -> d.put("_", false));
 
         byte[] expected = new byte[]{
                 // length
@@ -124,7 +127,7 @@ public class GoBsonTest {
 
     @Test
     public void testNull() {
-    	BsonDoc json = BsonBuilder.doc().putNull("_").get();
+    	BsonDoc json = BsonDoc.newDoc(d -> d.putNull("_"));
 
         byte[] expected = new byte[]{
                 // length
@@ -139,7 +142,7 @@ public class GoBsonTest {
 
     @Test
     public void testRegEx() {
-    	BsonDoc json = BsonBuilder.doc().put("_", Pattern.compile("ab")).get();
+    	BsonDoc json = BsonDoc.newDoc(d -> d.put("_", Pattern.compile("ab")));
 
         byte[] expected = new byte[]{
                 // length
@@ -154,7 +157,7 @@ public class GoBsonTest {
 
     @Test
     public void testDate() {
-    	BsonDoc json = BsonBuilder.doc().put("_", new Date(258)).get();
+    	BsonDoc json = BsonDoc.newDoc(d -> d.put("_", new Date(258)));
 
         byte[] expected = new byte[]{
                 // length
@@ -169,7 +172,7 @@ public class GoBsonTest {
 
     @Test
     public void testBinary() {
-    	BsonDoc json = BsonBuilder.doc().put("_", new byte[]{'y', 'o'}).get();
+    	BsonDoc json = BsonDoc.newDoc(d -> d.put("_", new byte[]{'y', 'o'}));
 
         byte[] expected = new byte[]{
                 // length
@@ -184,7 +187,7 @@ public class GoBsonTest {
 
     @Test
     public void testInt32() {
-    	BsonDoc json = BsonBuilder.doc().put("_", 258).get();
+    	BsonDoc json = BsonDoc.newDoc(d -> d.put("_", 258));
 
     	byte[] expected = new byte[]{
                 // length
@@ -199,7 +202,7 @@ public class GoBsonTest {
 
     @Test
     public void testInt64() {
-    	BsonDoc json = BsonBuilder.doc().put("_", 258l).get();
+    	BsonDoc json = BsonDoc.newDoc(d -> d.put("_", 258l));
 
         byte[] expected = new byte[]{
                 // length
@@ -214,7 +217,7 @@ public class GoBsonTest {
 
     @Test
     public void testInt64_2() {
-    	BsonDoc json = BsonBuilder.doc().put("_", 258l << 32).get();
+    	BsonDoc json = BsonDoc.newDoc(d -> d.put("_", 258l << 32));
 
         byte[] expected = new byte[]{
                 // length
@@ -229,7 +232,7 @@ public class GoBsonTest {
 
     @Test
     public void testMinKey() {
-    	BsonDoc json = BsonBuilder.doc().putMinKey("_").get();
+    	BsonDoc json = BsonDoc.newDoc(d -> d.putMinkey("_"));
 
         byte[] expected = new byte[]{
                 // length
@@ -244,7 +247,7 @@ public class GoBsonTest {
 
     @Test
     public void testMaxKey() {
-    	BsonDoc json = BsonBuilder.doc().putMaxKey("_").get();
+    	BsonDoc json = BsonDoc.newDoc(d -> d.putMaxkey("_"));
 
         byte[] expected = new byte[]{
                 // length

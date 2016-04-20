@@ -29,7 +29,6 @@ import io.github.bckfnn.mongodb.Collection;
 import io.github.bckfnn.mongodb.Database;
 import io.github.bckfnn.mongodb.Utils;
 import io.github.bckfnn.mongodb.WriteConcern;
-import io.github.bckfnn.mongodb.bson.BsonBuilder;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.RunTestOnContext;
@@ -52,7 +51,7 @@ public class CollectionTest {
                 Collection collection = client.database("test_X").collection("coll");
 
                 List<BsonDoc> data = new ArrayList<>();
-                BsonDoc val = BsonBuilder.doc().put("a", "value").get();
+                BsonDoc val = BsonDoc.newDoc(d -> d.put("a", "value"));
                 data.add(val);
 
                 collection.insert(data, WriteConcern.SAFE, context.asyncAssertSuccess(result -> {
@@ -95,7 +94,7 @@ public class CollectionTest {
                         Collection collection = database.collection("coll");
 
                         List<BsonDoc> data = new ArrayList<>();
-                        BsonDoc val = BsonBuilder.doc().put("a", "value").get();
+                        BsonDoc val = BsonDoc.newDoc(d -> d.put("a", "value"));
                         data.add(val);
 
                         collection.insert(data, WriteConcern.SAFE, context.asyncAssertSuccess(writeResult -> {
@@ -125,7 +124,7 @@ public class CollectionTest {
 
                 Collection collection = database.collection("coll");
 
-                BsonDoc val = BsonBuilder.doc().put("a", "value").get();
+                BsonDoc val = BsonDoc.newDoc(d -> d.put("a", "value"));
 
                 collection.insert(Arrays.asList(val), WriteConcern.SAFE, context.asyncAssertSuccess(writeResult -> {
                     context.assertEquals(1, (int) writeResult.getOk());
@@ -133,7 +132,7 @@ public class CollectionTest {
                     database.collection("coll").count(context.asyncAssertSuccess(count1 -> {
                         context.assertEquals(1l, count1.longValue());
 
-                        BsonDoc val2 = BsonBuilder.doc().put("a", "value").get();
+                        BsonDoc val2 = BsonDoc.newDoc(d -> d.put("a", "value"));
 
                         collection.insert(Arrays.asList(val2), WriteConcern.SAFE, context.asyncAssertSuccess(writeResult2 -> {
                             context.assertEquals(1, (int) writeResult2.getOk());

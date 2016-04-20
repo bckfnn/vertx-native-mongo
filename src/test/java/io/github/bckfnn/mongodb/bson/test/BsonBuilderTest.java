@@ -18,7 +18,6 @@ package io.github.bckfnn.mongodb.bson.test;
 import org.junit.Assert;
 import org.junit.Test;
 
-import io.github.bckfnn.mongodb.bson.BsonBuilder;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.github.bckfnn.mongodb.bson.JsonEncoder;
 import io.vertx.core.buffer.Buffer;
@@ -27,9 +26,10 @@ import io.vertx.core.buffer.Buffer;
 public class BsonBuilderTest {
     @Test
     public void jsonEncoder() {
-        BsonDoc doc = BsonBuilder.doc().
-                put("hello", "world").get();
-        System.out.println(doc);
+        BsonDoc doc = BsonDoc.newDoc(d -> {
+            d.put("hello", "world");
+        });
+
         Buffer b = JsonEncoder.encode(doc);
         Assert.assertEquals(b.toString(), "{\"hello\":\"world\"}");
     }
@@ -37,22 +37,23 @@ public class BsonBuilderTest {
 
     @Test
     public void docBooleans() {
-        BsonDoc doc = BsonBuilder.doc().
-                put("true", true).
-                put("false", false).
-                get();
+        BsonDoc doc = BsonDoc.newDoc(d -> {
+            d.put("true", true);
+            d.put("false", false);
+        });
+
         Assert.assertTrue(doc.getBoolean("true"));
         Assert.assertFalse(doc.getBoolean("false"));
     }
 
     @Test
     public void docIntegers() {
-        BsonDoc doc = BsonBuilder.doc().
-                put("zero", 0).
-                put("one", 1).
-                put("max", Integer.MAX_VALUE).
-                put("min", Integer.MIN_VALUE).
-                get();
+        BsonDoc doc = BsonDoc.newDoc(d -> {
+            d.put("zero", 0);
+            d.put("one", 1);
+            d.put("max", Integer.MAX_VALUE);
+            d.put("min", Integer.MIN_VALUE);
+        });
         Assert.assertEquals(0, doc.getInt("zero"));
         Assert.assertEquals(1, doc.getInt("one"));
         Assert.assertEquals(Integer.MAX_VALUE, doc.getInt("max"));
@@ -61,12 +62,12 @@ public class BsonBuilderTest {
 
     @Test
     public void docLongs() {
-        BsonDoc doc = BsonBuilder.doc().
-                put("zero", 0L).
-                put("one", 1L).
-                put("max", Long.MAX_VALUE).
-                put("min", Long.MIN_VALUE).
-                get();
+        BsonDoc doc = BsonDoc.newDoc(d -> {
+            d.put("zero", 0L);
+            d.put("one", 1L);
+            d.put("max", Long.MAX_VALUE);
+            d.put("min", Long.MIN_VALUE);
+        });
         Assert.assertEquals(0, doc.getLong("zero"));
         Assert.assertEquals(1, doc.getLong("one"));
         Assert.assertEquals(Long.MAX_VALUE, doc.getLong("max"));
@@ -75,12 +76,12 @@ public class BsonBuilderTest {
 
     @Test
     public void docDoubles() {
-        BsonDoc doc = BsonBuilder.doc().
-                put("zero", 0d).
-                put("one", 1d).
-                put("max", Double.MAX_VALUE).
-                put("min", Double.MIN_VALUE).
-                get();
+        BsonDoc doc = BsonDoc.newDoc(d -> {
+            d.put("zero", 0d);
+            d.put("one", 1d);
+            d.put("max", Double.MAX_VALUE);
+            d.put("min", Double.MIN_VALUE);
+        });
         Assert.assertEquals(0, doc.getDouble("zero"), 0);
         Assert.assertEquals(1, doc.getDouble("one"), 0);
         Assert.assertEquals(Double.MAX_VALUE, doc.getDouble("max"), 0);
@@ -89,59 +90,67 @@ public class BsonBuilderTest {
 
     @Test
     public void docBinary() {
-        BsonDoc doc = BsonBuilder.doc().
-                put("empty", new byte[0]).
-                put("one", new byte[] { 1 }).
-                get();
+        BsonDoc doc = BsonDoc.newDoc(d -> {
+            d.put("empty", new byte[0]);
+            d.put("one", new byte[] { 1 });
+        });
         Assert.assertArrayEquals(new byte[0], doc.getBinary("empty"));
         Assert.assertArrayEquals(new byte[] { 1 }, doc.getBinary("one"));
     }
 
     @Test
     public void subDoc() {
-        BsonDoc doc = BsonBuilder.doc().
-                putDoc("_").
-                put("a", "b").
-                get();
+        BsonDoc doc = BsonDoc.newDoc(d -> {
+            d.putDoc("_", d2 -> {
+                d2.put("a", "b");
+            });
+        });
         Assert.assertEquals(doc.getDocument("_").getString("a"), "b");
     }
 
     @Test
     public void subArray() {
-        BsonDoc doc = BsonBuilder.doc().
-                putArray("_").
-                append("a").
-                append("b").
-                get();
+        BsonDoc doc = BsonDoc.newDoc(d -> {
+            d.putArray("_", a -> {
+                a.add("a");
+                a.add("b");
+            });
+        });
         Assert.assertEquals(doc.getArray("_").getString(0), "a");
         Assert.assertEquals(doc.getArray("_").getString(1), "b");
     }
 
     @Test
     public void subArrayArray() {
-        BsonDoc doc = BsonBuilder.doc().
-                putArray("_").
-                appendDoc().put("a", "b").pop().
-                appendArray().append(1).pop().
-                get();
-        System.out.println(doc.toString());
+        BsonDoc doc = BsonDoc.newDoc(d -> {
+            d.putArray("_", a -> {
+                a.addDoc(d2 -> {
+                    d2.put("a", "b");
+                });
+                a.addArray(a2 -> {
+                    a2.add(1);
+                });
+            });
+        });
+
         Assert.assertEquals(doc.getArray("_").getDocument(0).getString("a"), "b");
         Assert.assertEquals(doc.getArray("_").getArray(1).getInt(0), 1);
     }
 
     @Test
     public void subArrayTypes() {
-        BsonDoc doc = BsonBuilder.doc().
-                putArray("_").
-                append("a").
-                append(1).
-                append(1l).
-                append(1d).
-                append(true).
-                appendNull().
-                appendMinkey().
-                appendMaxkey().
-                get();
+        BsonDoc doc = BsonDoc.newDoc(d -> {
+            d.putArray("_", a -> {
+                a.add("a");
+                a.add(1);
+                a.add(1l);
+                a.add(1d);
+                a.add(true);
+                a.addNull();
+                a.addMinkey();
+                a.addMaxkey();
+            });
+        });
         Assert.assertEquals(doc.getArray("_").getString(0), "a");
         Assert.assertEquals(doc.getArray("_").getInt(1), 1);
     }

@@ -18,7 +18,6 @@ package io.github.bckfnn.mongodb;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.bckfnn.mongodb.bson.BsonBuilder;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.github.bckfnn.mongodb.msg.Delete;
 import io.github.bckfnn.mongodb.msg.GetMore;
@@ -120,8 +119,7 @@ public class Collection {
     }
 
     public void findOne(String obj, BsonDoc fields, final Handler<AsyncResult<BsonDoc>> handler) {
-        BsonDoc queryDoc = BsonBuilder.doc().
-                put("_id", obj).get();
+        BsonDoc queryDoc = BsonDoc.newDoc(d -> d.put("_id", obj));
         findOne(queryDoc, fields, handler);
     }
 
@@ -132,10 +130,8 @@ public class Collection {
     }
 
     public void indexInformation(Handler<ReadStream<BsonDoc>> handler) {
-        BsonDoc query = BsonBuilder.doc().
-                put("ns", fullname()).get();
-
-        BsonDoc fields = BsonBuilder.doc().put("ns", 0).get();
+        BsonDoc query = BsonDoc.newDoc(d -> d.put("ns", fullname()));
+        BsonDoc fields = BsonDoc.newDoc(d -> d.put("ns", 0));
 
         database.collection("system.indexes").__find(query, fields, 0, 100, handler);
     }
@@ -149,17 +145,13 @@ public class Collection {
     }
 
     public void dropIndex(String name, Handler<AsyncResult<BsonDoc>> handler) {
-        BsonDoc cmd = BsonBuilder.doc().
-                put("dropIndexes", collectionName).
-                put("index", name).get();
+        BsonDoc cmd = BsonDoc.newDoc(d -> d.put("dropIndexes", collectionName).put("index", name));
         database.command(cmd, 0, 1, handler);
     }
 
     public void count(final Handler<AsyncResult<Long>> handler) {
 
-        BsonDoc queryDoc = BsonBuilder.doc().
-                put("count", collectionName).
-                get();
+        BsonDoc queryDoc = BsonDoc.newDoc(d -> d.put("count", collectionName));
 
         database.command(queryDoc, 0, 1, Utils.handler(handler, result -> {
             handler.handle(Future.succeededFuture((long) result.getInt("n")));

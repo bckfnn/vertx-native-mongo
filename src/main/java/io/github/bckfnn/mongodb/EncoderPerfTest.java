@@ -68,21 +68,21 @@ public class EncoderPerfTest {
     @Setup
     public void setup() throws IOException {
         final BsonDoc doc = new BsonDocMap();
-        doc.putString("string", "String value");
-        doc.putInt("int", 42);
-        doc.putLong("long", 42424242L);
-        doc.putDouble("double", 42.42);
-        doc.putBoolean("booleanTrue", true);
-        doc.putBoolean("booleanFalse", false);
+        doc.put("string", "String value");
+        doc.put("int", 42);
+        doc.put("long", 42424242L);
+        doc.put("double", 42.42);
+        doc.put("booleanTrue", true);
+        doc.put("booleanFalse", false);
 
         BsonDoc sub = new BsonDocMap();
-        sub.putString("sub", "sub value");
-        doc.putDocument("subdoc", sub);
+        sub.put("sub", "sub value");
+        doc.put("subdoc", sub);
 
         BsonArray arr = new BsonArrayList();
         arr.add(new BsonInt(43));
         arr.add(new BsonDouble(43));
-        doc.putArray("array", arr);
+        doc.put("array", arr);
 
         BsonEncoder enc = new BsonEncoder();
         enc.visitDocument(doc);

@@ -16,6 +16,7 @@
 package io.github.bckfnn.mongodb.bson;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public interface BsonArray extends Element, Iterable<Element> {
 
@@ -56,4 +57,23 @@ public interface BsonArray extends Element, Iterable<Element> {
     public BsonArray getArray(int idx);
 
     public void decode(BsonDecoder dec);
+    
+    public default void addDoc(Consumer<BsonDoc> handler) {
+        BsonDoc doc = new BsonDocMap();
+        handler.accept(doc);
+        add(doc);
+    }
+    
+    public default void addArray(Consumer<BsonArray> handler) {
+        BsonArray doc = new BsonArrayList();
+        handler.accept(doc);
+        add(doc);
+    }
+    
+    public static BsonArray newArray(Consumer<BsonArray> handler) {
+        BsonArray arr = new BsonArrayList();
+        handler.accept(arr);
+        return arr;
+    }
+
 }

@@ -25,8 +25,8 @@ public class BsonDocMap implements BsonDoc {
     private Map<String, Element> elements = new LinkedHashMap<>();
 
     @Override
-    public void putString(String name, String value) {
-        put(name, new BsonString(value));
+    public BsonDoc put(String name, String value) {
+        return put(name, new BsonString(value));
     }
 
     @Override
@@ -36,8 +36,8 @@ public class BsonDocMap implements BsonDoc {
     }
 
     @Override
-    public void putInt(String name, int value) {
-        put(name, new BsonInt(value));
+    public BsonDoc put(String name, int value) {
+        return put(name, new BsonInt(value));
     }
 
     @Override
@@ -46,8 +46,8 @@ public class BsonDocMap implements BsonDoc {
     }
 
     @Override
-    public void putLong(String name, long value) {
-        put(name, new BsonLong(value));
+    public BsonDoc put(String name, long value) {
+        return put(name, new BsonLong(value));
     }
 
     @Override
@@ -56,8 +56,8 @@ public class BsonDocMap implements BsonDoc {
     }
 
     @Override
-    public void putDouble(String name, double value) {
-        put(name, new BsonDouble(value));
+    public BsonDoc put(String name, double value) {
+        return put(name, new BsonDouble(value));
     }
 
     @Override
@@ -71,8 +71,8 @@ public class BsonDocMap implements BsonDoc {
     }
 
     @Override
-    public void putBoolean(String name, boolean value) {
-        put(name, new BsonBoolean(value));
+    public BsonDoc put(String name, boolean value) {
+        return put(name, new BsonBoolean(value));
     }
 
     @Override
@@ -81,8 +81,8 @@ public class BsonDocMap implements BsonDoc {
     }
 
     @Override
-    public void putDate(String name, Date value) {
-        put(name, new BsonDatetime(value.getTime()));
+    public BsonDoc put(String name, Date value) {
+        return put(name, new BsonDatetime(value.getTime()));
     }
 
     @Override
@@ -91,8 +91,8 @@ public class BsonDocMap implements BsonDoc {
     }
 
     @Override
-    public void putBinary(String name, byte[] value) {
-        put(name, new BsonBinary((byte) 0, value));
+    public BsonDoc put(String name, byte[] value) {
+        return put(name, new BsonBinary((byte) 0, value));
     }
 
     @Override
@@ -101,8 +101,8 @@ public class BsonDocMap implements BsonDoc {
     }
 
     @Override
-    public void putPattern(String name, Pattern value) {
-        put(name, new BsonRegex(value.pattern(), ""));
+    public BsonDoc put(String name, Pattern value) {
+        return put(name, new BsonRegex(value.pattern(), ""));
     }
 
     @Override
@@ -111,23 +111,23 @@ public class BsonDocMap implements BsonDoc {
     }
 
     @Override
-    public void putNull(String name) {
-        put(name, new BsonNull());
+    public BsonDoc putNull(String name) {
+        return put(name, new BsonNull());
     }
 
     @Override
-    public void putMinkey(String name) {
-        put(name, new BsonMinkey());
+    public BsonDoc putMinkey(String name) {
+        return put(name, new BsonMinkey());
     }
 
     @Override
-    public void putMaxkey(String name) {
-        put(name, new BsonMaxkey());
+    public BsonDoc putMaxkey(String name) {
+        return put(name, new BsonMaxkey());
     }
 
     @Override
-    public void putDocument(String name, BsonDoc value) {
-        put(name, value);
+    public BsonDoc put(String name, BsonDoc value) {
+        return put(name, (Element) value);
     }
 
     @Override
@@ -136,8 +136,8 @@ public class BsonDocMap implements BsonDoc {
     }
 
     @Override
-    public void putArray(String name, BsonArray value) {
-        put(name, value);
+    public BsonDoc put(String name, BsonArray value) {
+        return put(name, (Element) value);
     }
 
     @Override
@@ -163,9 +163,10 @@ public class BsonDocMap implements BsonDoc {
     }
 
     @Override
-    public void put(String name, Element element) {
+    public BsonDoc put(String name, Element element) {
         init();
         elements.put(name, element);
+        return this;
     }
 
     @Override

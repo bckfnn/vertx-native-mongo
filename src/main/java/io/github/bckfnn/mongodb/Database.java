@@ -15,7 +15,6 @@
  */
 package io.github.bckfnn.mongodb;
 
-import io.github.bckfnn.mongodb.bson.BsonBuilder;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.github.bckfnn.mongodb.msg.OutMessage;
 import io.github.bckfnn.mongodb.msg.Query;
@@ -48,7 +47,7 @@ public class Database {
     }
 
     public void collectionsInfo(Handler<ReadStream<BsonDoc>> handler) {
-        BsonDoc queryDoc = BsonBuilder.doc().get();
+        BsonDoc queryDoc = BsonDoc.newDoc(d -> {});
     	collection("system.namespaces").__find(queryDoc, null, 0, 10, Utils.each(handler, (func, doc) -> {
     	    func.accept(doc);
     	}));
@@ -68,7 +67,7 @@ public class Database {
     }
 
     public void createCollection(String name, Handler<AsyncResult<BsonDoc>> handler) {
-        BsonDoc cmd = BsonBuilder.doc().put("create", name).get();
+        BsonDoc cmd = BsonDoc.newDoc(d -> d.put("create", name));
         command(cmd, 0, 1, handler);
     }
 
@@ -93,7 +92,7 @@ public class Database {
     }
 
     public void command(String cmd, final int skip, final int size, final Handler<AsyncResult<BsonDoc>> handler) {
-        BsonDoc cmdDoc = BsonBuilder.doc().put(cmd, 1).get();
+        BsonDoc cmdDoc = BsonDoc.newDoc(d -> d.put(cmd, 1));
         command(cmdDoc, skip, size, handler);
     }
 

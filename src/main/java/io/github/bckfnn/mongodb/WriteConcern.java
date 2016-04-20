@@ -61,22 +61,22 @@ public enum WriteConcern {
 
     public BsonDoc getCommand() {
         BsonDoc command = new BsonDocMap();
-        command.putInt("getlasterror", 1);
+        command.put("getlasterror", 1);
 
         if (_w > 1) {
-            command.putInt("w", _w);
+            command.put("w", _w);
         }
 
         if (_wtimeout > 0) {
-            command.putInt("wtimeout", _wtimeout);
+            command.put("wtimeout", _wtimeout);
         }
 
         if (_fsync) {
-            command.putBoolean("fsync", true);
+            command.put("fsync", true);
         }
 
         if (_j) {
-            command.putBoolean("j", true);
+            command.put("j", true);
         }
 
         return command;
