@@ -38,6 +38,8 @@ public interface BsonDoc extends Element {
 
     public void putBoolean(String name, boolean value);
 
+    public Number getNumber(String name);
+
     public boolean getBoolean(String name);
 
     public void putDate(String name, Date value);
@@ -71,4 +73,6 @@ public interface BsonDoc extends Element {
     public Element get(String name);
 
     public void put(String name, Element element);
+
+    public void decode(BsonDecoder dec);
 }

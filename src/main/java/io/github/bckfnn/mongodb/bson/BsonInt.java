@@ -15,7 +15,7 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-public class BsonInt implements Element {
+final public class BsonInt implements Element, BsonNumber {
     private int value;
 
     public BsonInt(int value) {
@@ -23,6 +23,11 @@ public class BsonInt implements Element {
     }
 
     public int getValue() {
+        return value;
+    }
+
+    @Override
+    public Number getNumber() {
         return value;
     }
 

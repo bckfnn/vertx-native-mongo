@@ -15,7 +15,7 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-public class BsonBoolean implements Element {
+final public class BsonBoolean implements Element {
     private boolean value;
 
     public BsonBoolean(boolean value) {

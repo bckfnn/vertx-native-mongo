@@ -17,7 +17,9 @@ package io.github.bckfnn.mongodb.bson;
 
 import java.util.Arrays;
 
-public class BsonBinary implements Element {
+import javax.xml.bind.DatatypeConverter;
+
+final public class BsonBinary implements Element {
     private byte subtype;
     private byte[] value;
 
@@ -63,6 +65,11 @@ public class BsonBinary implements Element {
 			return false;
 		return true;
 	}
+
+    @Override
+    public String toString() {
+        return DatatypeConverter.printHexBinary(value);
+    }
 
 
 }

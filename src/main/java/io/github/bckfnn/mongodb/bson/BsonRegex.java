@@ -15,7 +15,7 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-public class BsonRegex implements Element {
+final public class BsonRegex implements Element {
     private String value;
     private String options;
 

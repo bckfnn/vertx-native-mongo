@@ -15,14 +15,18 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+
+import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
 
-public class BsonDecoder {
-    private Buffer buffer;
+final public class BsonDecoder {
+    private ByteBuf buffer;
     private int pos = 0;
 
     public BsonDecoder(Buffer buffer) {
-        this.buffer = buffer;
+        this.buffer = buffer.getByteBuf().order(ByteOrder.LITTLE_ENDIAN);
         this.pos = 0;
     }
 
@@ -47,19 +51,27 @@ public class BsonDecoder {
             return new BsonString(string());
 
         case Element.DOCUMENT:
-            size = int32() - 4;
-            BsonDoc doc = new BsonDocLazy(this, pos - 4);
-            pos += size;
+            //size = int32() - 4;
+            BsonDoc doc = new BsonDocMap();
+            loadDocument(doc);
+            //pos += size;
             return doc;
 
         case Element.ARRAY:
-            size = int32() - 4;
-            return new BsonArrayLazy(buffer.getBuffer(pos, pos += size));
+            //size = int32() - 4;
+            BsonArray arr = new BsonArray();
+            loadArray(arr);
+            //pos += size;
+            return arr;
 
         case Element.BINARY:
             size = int32();
             int subtype = int8();
-            return new BsonBinary((byte) subtype, buffer.getBytes(pos, pos += size));
+            byte[] bytes = new byte[size];
+            buffer.getBytes(pos, bytes, 0, size);
+            BsonBinary bin = new BsonBinary((byte) subtype, bytes);
+            pos += size;
+            return bin;
 
         case Element.OBJECTID:
             return new BsonObjectId(int32(), int64());
@@ -102,7 +114,7 @@ public class BsonDecoder {
             DBPOINTER(0x0C),
             */
         }
-        throw new RuntimeException("Unknown bson element type:" + type);
+        throw new RuntimeException("Unknown bson element type:" + type + " at " + pos);
     }
 
     public void loadDocument(BsonDoc doc) {
@@ -120,8 +132,9 @@ public class BsonDecoder {
     }
 
     public void loadArray(BsonArray arr) {
+        int size = int32() - 4;
         //System.out.println("array size:" + buffer.length());
-        for (int l = buffer.length(); pos < l;) {
+        for (int end = pos + size; pos < end; ) {
             int type = int8();
             if (type == 0) {
                 break;
@@ -137,7 +150,7 @@ public class BsonDecoder {
         int start = pos;
         while (buffer.getByte(pos++) != 0)
             ;
-        return buffer.getString(start, pos - 1, "UTF-8");
+        return buffer.toString(start, pos - start - 1, StandardCharsets.UTF_8);
     }
 
     private String cstring() {
@@ -146,7 +159,7 @@ public class BsonDecoder {
 
     private String string() {
         int size = int32();
-        String value = buffer.getString(pos, pos + size - 1, "UTF-8");
+        String value = buffer.toString(pos, size - 1, StandardCharsets.UTF_8);
         pos += size;
         return value;
     }
@@ -156,30 +169,14 @@ public class BsonDecoder {
     }
 
     public int int32() {
-        int l = Integer.reverseBytes(buffer.getInt(pos));
+        int l = buffer.getInt(pos);
         pos += 4;
         return l;
-        /*
-        return buffer.getByte(pos++) & 0xFF |
-                (buffer.getByte(pos++) & 0xFF) << 8 |
-                (buffer.getByte(pos++) & 0xFF) << 16 |
-                (buffer.getByte(pos++) & 0xFF) << 24;
-        */
     }
 
     public long int64() {
-        long l = Long.reverseBytes(buffer.getLong(pos));
+        long l = buffer.getLong(pos);
         pos += 8;
         return l;
-        /*
-        return buffer.getByte(pos++) & 0xFF |
-                (buffer.getByte(pos++) & 0xFF) << 8 |
-                (buffer.getByte(pos++) & 0xFF) << 16 |
-                (buffer.getByte(pos++) & 0xFF) << 24 |
-                (buffer.getByte(pos++) & 0xFF) << 32 |
-                (buffer.getByte(pos++) & 0xFF) << 40 |
-                (buffer.getByte(pos++) & 0xFF) << 48 |
-                (buffer.getByte(pos++) & 0xFF) << 56;
-        */
     }
 }

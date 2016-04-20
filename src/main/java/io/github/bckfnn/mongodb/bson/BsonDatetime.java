@@ -17,7 +17,7 @@ package io.github.bckfnn.mongodb.bson;
 
 import java.util.Date;
 
-public class BsonDatetime implements Element {
+final public class BsonDatetime implements Element {
     private long value;
 
     public BsonDatetime(long value) {

@@ -15,7 +15,7 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-public class BsonMinkey implements Element {
+final public class BsonMinkey implements Element {
 
     public BsonMinkey() {
     }

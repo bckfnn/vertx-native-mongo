@@ -15,7 +15,7 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-public class BsonLong implements Element {
+final public class BsonLong implements Element, BsonNumber {
     final private long value;
 
     public BsonLong(long value) {
@@ -23,6 +23,11 @@ public class BsonLong implements Element {
     }
 
     public long getValue() {
+        return value;
+    }
+
+    @Override
+    public Number getNumber() {
         return value;
     }
 

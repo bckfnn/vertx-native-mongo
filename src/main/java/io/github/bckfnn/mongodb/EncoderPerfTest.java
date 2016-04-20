@@ -17,10 +17,12 @@ package io.github.bckfnn.mongodb;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.bson.BsonBinaryReader;
 import org.bson.BsonBinaryWriter;
 import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
@@ -28,6 +30,7 @@ import org.bson.BsonInt32;
 import org.bson.BsonInt64;
 import org.bson.BsonString;
 import org.bson.codecs.BsonDocumentCodec;
+import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.io.BasicOutputBuffer;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -42,6 +45,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import io.github.bckfnn.mongodb.bson.BsonArray;
+import io.github.bckfnn.mongodb.bson.BsonDecoder;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.github.bckfnn.mongodb.bson.BsonDocMap;
 import io.github.bckfnn.mongodb.bson.BsonDouble;
@@ -58,6 +62,7 @@ import io.vertx.core.buffer.Buffer;
 public class EncoderPerfTest {
     BsonDoc doc;
     BsonDocument doc1;
+    byte[] encoded;
 
     @Setup
     public void setup() throws IOException {
@@ -81,6 +86,7 @@ public class EncoderPerfTest {
         BsonEncoder enc = new BsonEncoder();
         enc.visitDocument(doc);
         System.out.println(enc.asBuffer() + " " + DatatypeConverter.printHexBinary(enc.asBuffer().getBytes()));
+        encoded = enc.asBuffer().getBytes();
 
 
         doc1 = new BsonDocument();
@@ -110,7 +116,7 @@ public class EncoderPerfTest {
     }
 
     @Benchmark
-	public Buffer bsonTest() throws Exception {
+	public Buffer encodeBsonTest() throws Exception {
         BsonEncoder enc = new BsonEncoder();
         enc.visitDocument(doc);
 
@@ -118,9 +124,21 @@ public class EncoderPerfTest {
 	}
 
     @Benchmark
-    public Object mongoTest() throws Exception {
+    public BsonDoc decodeBsonTest() throws Exception {
+        return BsonDecoder.decode(Buffer.buffer(encoded));
+    }
+
+
+    @Benchmark
+    public Object encodeMongoTest() throws Exception {
         BasicOutputBuffer out = new BasicOutputBuffer(512);
         new BsonDocumentCodec().encode(new BsonBinaryWriter(out), doc1, EncoderContext.builder().build());
         return out.getByteBuffers();
+    }
+
+    @Benchmark
+    public Object decodeMongoTest() throws Exception {
+        BsonBinaryReader reader = new BsonBinaryReader(ByteBuffer.wrap(encoded));
+        return new BsonDocumentCodec().decode(reader, DecoderContext.builder().build());
     }
 }

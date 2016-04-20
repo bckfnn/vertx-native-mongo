@@ -17,7 +17,7 @@ package io.github.bckfnn.mongodb.bson;
 
 import io.vertx.core.buffer.Buffer;
 
-public class JsonEncoder implements Visitor {
+final public class JsonEncoder implements Visitor {
     private Buffer buffer;
 
     public JsonEncoder(Buffer buffer) {

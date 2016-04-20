@@ -17,7 +17,7 @@ package io.github.bckfnn.mongodb.bson;
 
 import java.util.Date;
 
-public class BsonTimestamp implements Element {
+final public class BsonTimestamp implements Element {
     private int increment;
     private int timestamp;
 

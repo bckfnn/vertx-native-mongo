@@ -15,7 +15,7 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-public class BsonObjectId implements Element {
+final public class BsonObjectId implements Element {
     public int timestamp;
     public long machineId;
 

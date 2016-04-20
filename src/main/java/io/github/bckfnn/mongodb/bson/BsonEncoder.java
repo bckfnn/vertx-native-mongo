@@ -22,9 +22,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.buffer.Buffer;
 
-
-//import org.vertx.java.core.buffer.Buffer;
-
 final public class BsonEncoder implements Visitor {
 
     public BsonEncoder() {

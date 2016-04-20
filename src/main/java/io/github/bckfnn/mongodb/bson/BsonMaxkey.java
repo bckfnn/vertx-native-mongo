@@ -15,7 +15,7 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-public class BsonMaxkey implements Element {
+final public class BsonMaxkey implements Element {
 
     public BsonMaxkey() {
     }

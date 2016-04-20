@@ -15,7 +15,7 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-public class BsonNull implements Element {
+final public class BsonNull implements Element {
 
     public BsonNull() {
     }

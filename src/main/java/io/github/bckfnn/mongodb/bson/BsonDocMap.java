@@ -66,6 +66,11 @@ public class BsonDocMap implements BsonDoc {
     }
 
     @Override
+    public Number getNumber(String name) {
+        return get(BsonNumber.class, name).getNumber();
+    }
+
+    @Override
     public void putBoolean(String name, boolean value) {
         put(name, new BsonBoolean(value));
     }
@@ -218,6 +223,8 @@ public class BsonDocMap implements BsonDoc {
         return true;
     }
 
-
-
+    @Override
+    public void decode(BsonDecoder dec) {
+        dec.loadDocument(this);
+    }
 }

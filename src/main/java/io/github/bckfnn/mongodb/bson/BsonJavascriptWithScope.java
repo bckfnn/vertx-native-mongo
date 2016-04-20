@@ -15,7 +15,7 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-public class BsonJavascriptWithScope implements Element {
+final public class BsonJavascriptWithScope implements Element {
     private String value;
     private BsonDoc scope;
 

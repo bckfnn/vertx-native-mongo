@@ -15,7 +15,7 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-public class BsonString implements Element {
+final public class BsonString implements Element {
     private String value;
 
     public BsonString(String value) {

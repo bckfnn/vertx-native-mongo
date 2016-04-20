@@ -15,7 +15,7 @@
  */
 package io.github.bckfnn.mongodb.bson;
 
-public class BsonDocLazy extends BsonDocMap {
+final public class BsonDocLazy extends BsonDocMap {
     private BsonDecoder decoder;
     private int pos;
 
@@ -23,6 +23,7 @@ public class BsonDocLazy extends BsonDocMap {
         this.decoder = decoder;
         this.pos = pos;
     }
+
 
     @Override
     protected void init() {
@@ -40,4 +41,13 @@ public class BsonDocLazy extends BsonDocMap {
     public void accept(String name, Visitor visitor) {
         visitor.visitDocument(name, this);
     }
+
+    @Override
+    public void decode(BsonDecoder dec) {
+        this.decoder = dec;
+        //this.pos = dec.getPos();
+        int size = dec.int32() - 4;
+        //dec.setPos(dec.getPos() + size);
+    }
+
 }
