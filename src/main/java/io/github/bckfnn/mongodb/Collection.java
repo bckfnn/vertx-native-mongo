@@ -17,6 +17,7 @@ package io.github.bckfnn.mongodb;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.github.bckfnn.mongodb.msg.Delete;
@@ -79,17 +80,15 @@ public class Collection {
     	return database;
     }
 
-    public void insert(List<BsonDoc> documents, WriteConcern concern, final Handler<AsyncResult<WriteResult>> handler) {
-        //WriteResult last = null;
+    public void insert(List<BsonDoc> documents, WriteConcern concern, final Handler<ReadStream<WriteResult>> handler) {
+        AtomicInteger cnt = new AtomicInteger(0);
+
+        Utils.ElementReadStream<WriteResult> results = new Utils.ElementReadStream<WriteResult>();
+        handler.handle(results);
 
         int cur = 0;
         int maxsize = database.client.getMaxBsonSize();
         while (cur < documents.size()) {
-
-            Insert insert = new Insert();
-            insert.setCollectionName(fullname());
-            insert.setMultiUpdate(concern._continueOnErrorForInsert);
-
             List<BsonDoc> part = new ArrayList<>();
             for (; cur < documents.size(); cur++) {
                 BsonDoc o = documents.get(cur);
@@ -101,10 +100,42 @@ public class Collection {
                     break;
                 }
             }
-            insert.setDocuments(part);
 
-            database.execute(insert, concern, WriteResult.result(handler));
+            Insert insert = new Insert();
+            insert.setCollectionName(fullname());
+            insert.setMultiUpdate(concern._continueOnErrorForInsert);
+
+            insert.setDocuments(part);
+            cnt.addAndGet(1);
+
+            database.execute(insert, concern, ar -> {
+                if (ar.failed()) {
+                    results.fail(ar.cause());
+                    cnt.set(-1);
+                } else {
+                    results.send(new WriteResult(ar.result().getDocuments().get(0)));
+                    if (cnt.decrementAndGet() == 0) {
+                        results.end();
+                    }
+                }
+            });
         }
+        if (cnt.get() == 0) {
+            results.end();
+        }
+    }
+
+    public void insert(BsonDoc document, WriteConcern concern, final Handler<AsyncResult<WriteResult>> handler) {
+        List<BsonDoc> part = new ArrayList<>();
+        part.add(document);
+
+        Insert insert = new Insert();
+        insert.setCollectionName(fullname());
+        insert.setMultiUpdate(false);
+
+        insert.setDocuments(part);
+
+        database.execute(insert, concern, WriteResult.result(handler));
     }
 
     public void update(BsonDoc q, BsonDoc o, boolean upsert, boolean multi, WriteConcern concern, Handler<AsyncResult<WriteResult>> handler) {

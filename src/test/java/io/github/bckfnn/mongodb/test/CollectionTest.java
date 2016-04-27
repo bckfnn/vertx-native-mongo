@@ -15,10 +15,8 @@
  */
 package io.github.bckfnn.mongodb.test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -50,11 +48,9 @@ public class CollectionTest {
 
                 Collection collection = client.database("test_X").collection("coll");
 
-                List<BsonDoc> data = new ArrayList<>();
                 BsonDoc val = BsonDoc.newDoc(d -> d.put("a", "value"));
-                data.add(val);
 
-                collection.insert(data, WriteConcern.SAFE, context.asyncAssertSuccess(result -> {
+                collection.insert(val, WriteConcern.SAFE, context.asyncAssertSuccess(result -> {
                     context.assertEquals(1, (int) result.getOk());
 
                     client.getDatabaseNames(context.asyncAssertSuccess(list2 -> {
@@ -93,11 +89,9 @@ public class CollectionTest {
 
                         Collection collection = database.collection("coll");
 
-                        List<BsonDoc> data = new ArrayList<>();
                         BsonDoc val = BsonDoc.newDoc(d -> d.put("a", "value"));
-                        data.add(val);
 
-                        collection.insert(data, WriteConcern.SAFE, context.asyncAssertSuccess(writeResult -> {
+                        collection.insert(val, WriteConcern.SAFE, context.asyncAssertSuccess(writeResult -> {
                             context.assertEquals(1, (int) writeResult.getOk());
 
                             database.collectionNames(rs2 -> {
@@ -126,7 +120,7 @@ public class CollectionTest {
 
                 BsonDoc val = BsonDoc.newDoc(d -> d.put("a", "value"));
 
-                collection.insert(Arrays.asList(val), WriteConcern.SAFE, context.asyncAssertSuccess(writeResult -> {
+                collection.insert(val, WriteConcern.SAFE, context.asyncAssertSuccess(writeResult -> {
                     context.assertEquals(1, (int) writeResult.getOk());
 
                     database.collection("coll").count(context.asyncAssertSuccess(count1 -> {
@@ -134,7 +128,7 @@ public class CollectionTest {
 
                         BsonDoc val2 = BsonDoc.newDoc(d -> d.put("a", "value"));
 
-                        collection.insert(Arrays.asList(val2), WriteConcern.SAFE, context.asyncAssertSuccess(writeResult2 -> {
+                        collection.insert(val2, WriteConcern.SAFE, context.asyncAssertSuccess(writeResult2 -> {
                             context.assertEquals(1, (int) writeResult2.getOk());
 
                             database.collection("coll").count(context.asyncAssertSuccess(count2 -> {
