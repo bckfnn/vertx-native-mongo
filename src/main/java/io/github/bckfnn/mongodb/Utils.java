@@ -30,7 +30,7 @@ public class Utils {
 
     public static <T, R> Handler<AsyncResult<T>> handler(Handler<AsyncResult<R>> handler, Consumer<T> func) {
         return ar -> {
-            System.out.println("got handler callback " + ar.succeeded());
+            //System.out.println("got handler callback " + ar.succeeded());
             if (ar.succeeded()) {
                 func.accept(ar.result());
             } else {

@@ -73,7 +73,7 @@ public class Client {
 
                     @Override
                     public void handle(Buffer buffer) {
-                        System.out.println("handle:" + buffer.length());
+                        //System.out.println("handle:" + buffer.length());
                         if (s) {
                             int size = Integer.reverseBytes(buffer.getInt(0));
                             //System.out.println(size);
@@ -81,13 +81,14 @@ public class Client {
                         } else {
                             Reply reply = new Reply();
                             reply.read(new BsonDecoder(buffer));
-                            System.out.println(reply);
-                            System.out.println(reply.getDocuments());
+                            //System.out.println(reply);
+                            //System.out.println(reply.getDocuments());
                             Handler<AsyncResult<Reply>> callback = callbacks.remove(reply.getResponseId());
-                            System.out.println("found callback:" + callback + "  for " + reply.getResponseId());
                             if (callback != null) {
                                 outstanding--;
                                 callback.handle(Future.succeededFuture(reply));
+                            } else {
+                                System.err.println("no callback:" + callback + "  for " + reply.getResponseId());
                             }
                             rp.fixedSizeMode(4);
                         }
@@ -95,7 +96,12 @@ public class Client {
                     }
 
                 });
-
+                netSocket.closeHandler($ -> {
+                    System.err.println("close handler");
+                });
+                netSocket.exceptionHandler(e -> {
+                    System.err.println("exception " + e);
+                });
                 netSocket.handler(rp);
 
                 database("admin").command("ismaster", 0, 1, Utils.handler(handler, r -> {
@@ -119,7 +125,7 @@ public class Client {
 
     public void write(OutMessage msg, OutMessage lastError, final Handler<AsyncResult<Reply>> callback) {
         msg.setRequestId(++requestId);
-        System.out.println("write-request:" + requestId);
+        //System.out.println("write-request:" + requestId);
 
         BsonEncoder enc = new BsonEncoder();
         msg.send(enc);
@@ -130,7 +136,7 @@ public class Client {
 
         if (msg.hasResponse() || lastError != null) {
             outstanding++;
-            System.out.println("outstanding:" + outstanding);
+            //System.out.println("outstanding:" + outstanding);
             callbacks.put(requestId, callback);
             netSocket.write(enc.getBuffer());
         } else {
