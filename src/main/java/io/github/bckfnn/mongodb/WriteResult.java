@@ -15,11 +15,9 @@
  */
 package io.github.bckfnn.mongodb;
 
+import io.github.bckfnn.callback.Callback;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.github.bckfnn.mongodb.msg.Reply;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 
 
 public class WriteResult {
@@ -46,9 +44,9 @@ public class WriteResult {
         return lastError.toString();
     }
 
-    public static Handler<AsyncResult<Reply>> result(final Handler<AsyncResult<WriteResult>> handler) {
-        return Utils.handler(handler, reply -> {
-            handler.handle(Future.succeededFuture(new WriteResult(reply.getDocuments().get(0))));
+    public static Callback<Reply> result(final Callback<WriteResult> callback) {
+        return callback.call(reply -> {
+            callback.ok(new WriteResult(reply.getDocuments().get(0))    );
         });
     }
 }

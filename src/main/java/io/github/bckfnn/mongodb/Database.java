@@ -15,14 +15,13 @@
  */
 package io.github.bckfnn.mongodb;
 
+import io.github.bckfnn.callback.Callback;
+import io.github.bckfnn.callback.CallbackReadStream;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
+import io.github.bckfnn.mongodb.bson.Element;
 import io.github.bckfnn.mongodb.msg.OutMessage;
 import io.github.bckfnn.mongodb.msg.Query;
 import io.github.bckfnn.mongodb.msg.Reply;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.streams.ReadStream;
 
 
 public class Database {
@@ -46,52 +45,61 @@ public class Database {
         return new Collection(this, collectionName);
     }
 
-    public void collectionsInfo(Handler<ReadStream<BsonDoc>> handler) {
+    public void collectionsInfo(CallbackReadStream<BsonDoc> callback) {
         BsonDoc queryDoc = BsonDoc.newDoc(d -> {});
-    	collection("system.namespaces").__find(queryDoc, null, 0, 10, Utils.each(handler, (func, doc) -> {
+        /*
+    	collection("system.namespaces").__find(queryDoc, null, 0, 10, callback.each((func, doc) -> {
     	    func.accept(doc);
     	}));
+    	*/
+        callback.call(rs -> {
+            command("listCollections", 0, -1, (res, err) -> {
+                System.out.println(res + " " + err);
+                for (Element x : res.getDocument("cursor").getArray("firstBatch")) {
+                    rs.send((BsonDoc) x); 
+                }
+                rs.end();
+            });
+        });
     }
 
-    public void collectionNames(Handler<ReadStream<String>> handler) {
-    	collectionsInfo(Utils.each(handler, (func, doc) -> {
-		    String cname = doc.getString("name").substring(name.length() + 1);
-		    if (cname.indexOf('.') < 0) {
-		        func.accept(cname);
-		    }
+    public void collectionNames(CallbackReadStream<String> callback) {
+    	collectionsInfo(callback.each((func, doc) -> {
+		    String cname = doc.getString("name");
+	        func.accept(cname);
     	}));
     }
 
-    public void dropDatabase(Handler<AsyncResult<BsonDoc>> handler) {
-        command("dropDatabase", 0, 1, handler);
+    public void dropDatabase(Callback<BsonDoc> callback) {
+        command("dropDatabase", 0, 1, callback);
     }
 
-    public void createCollection(String name, Handler<AsyncResult<BsonDoc>> handler) {
+    public void createCollection(String name, Callback<BsonDoc> callback) {
         BsonDoc cmd = BsonDoc.newDoc(d -> d.put("create", name));
-        command(cmd, 0, 1, handler);
+        command(cmd, 0, 1, callback);
     }
 
-    public void execute(OutMessage msg, WriteConcern concern, Handler<AsyncResult<Reply>> handler) {
+    public void execute(OutMessage msg, WriteConcern concern, Callback<Reply> callback) {
         Query lastError = null;
 
         if (concern != null && concern.callGetLastError()) {
             lastError = collection("$cmd").makeQuery(concern.getCommand(), null, 0, -1);
         }
 
-        client.write(msg, lastError, handler);
+        client.write(msg, lastError, callback);
     }
 
-    public void command(final BsonDoc cmd, final int skip, final int size, final Handler<AsyncResult<BsonDoc>> handler) {
-        collection("$cmd").__find(cmd, null, skip, size, Utils.one(handler, result -> {
+    public void command(BsonDoc cmd, int skip, int size, Callback<BsonDoc> callback) {
+        collection("$cmd").__find(cmd, null, skip, size, callback.one(result -> {
 			if (result.getDouble("ok") == 1) {
-				handler.handle(Future.succeededFuture(result));
+				callback.ok(result);
 			} else {
-			    handler.handle(Future.failedFuture(new Error(result.getString("err"))));
+			    callback.fail(new Error(result.getString("err")));
 			}
         }));
     }
 
-    public void command(String cmd, final int skip, final int size, final Handler<AsyncResult<BsonDoc>> handler) {
+    public void command(String cmd, int skip, int size, Callback<BsonDoc> handler) {
         BsonDoc cmdDoc = BsonDoc.newDoc(d -> d.put(cmd, 1));
         command(cmdDoc, skip, size, handler);
     }

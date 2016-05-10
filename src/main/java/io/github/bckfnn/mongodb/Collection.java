@@ -19,14 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.github.bckfnn.callback.Callback;
+import io.github.bckfnn.callback.CallbackReadStream;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.github.bckfnn.mongodb.msg.Delete;
 import io.github.bckfnn.mongodb.msg.GetMore;
 import io.github.bckfnn.mongodb.msg.Insert;
 import io.github.bckfnn.mongodb.msg.Query;
 import io.github.bckfnn.mongodb.msg.Reply;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.ReadStream;
 
@@ -108,12 +108,12 @@ public class Collection {
             insert.setDocuments(part);
             cnt.addAndGet(1);
 
-            database.execute(insert, concern, ar -> {
-                if (ar.failed()) {
-                    results.fail(ar.cause());
+            database.execute(insert, concern, (result, error) -> {
+                if (error != null) {
+                    results.fail(error);
                     cnt.set(-1);
                 } else {
-                    results.send(new WriteResult(ar.result().getDocuments().get(0)));
+                    results.send(new WriteResult(result.getDocuments().get(0)));
                     if (cnt.decrementAndGet() == 0) {
                         results.end();
                     }
@@ -125,7 +125,7 @@ public class Collection {
         }
     }
 
-    public void insert(BsonDoc document, WriteConcern concern, final Handler<AsyncResult<WriteResult>> handler) {
+    public void insert(BsonDoc document, WriteConcern concern, final Callback<WriteResult> callback) {
         List<BsonDoc> part = new ArrayList<>();
         part.add(document);
 
@@ -135,57 +135,57 @@ public class Collection {
 
         insert.setDocuments(part);
 
-        database.execute(insert, concern, WriteResult.result(handler));
+        database.execute(insert, concern, WriteResult.result(callback));
     }
 
-    public void update(BsonDoc q, BsonDoc o, boolean upsert, boolean multi, WriteConcern concern, Handler<AsyncResult<WriteResult>> handler) {
+    public void update(BsonDoc q, BsonDoc o, boolean upsert, boolean multi, WriteConcern concern, Callback<WriteResult> callback) {
     }
 
-    public void remove(BsonDoc o, WriteConcern concern, final Handler<AsyncResult<WriteResult>> handler) {
+    public void remove(BsonDoc o, WriteConcern concern, final Callback<WriteResult> callback) {
         Delete delete = new Delete();
         delete.setCollectionName(fullname());
         delete.setSelector(o);
 
-        database.execute(delete, concern, WriteResult.result(handler));
+        database.execute(delete, concern, WriteResult.result(callback));
     }
 
-    public void findOne(String obj, BsonDoc fields, final Handler<AsyncResult<BsonDoc>> handler) {
+    public void findOne(String obj, BsonDoc fields, final Callback<BsonDoc> callback) {
         BsonDoc queryDoc = BsonDoc.newDoc(d -> d.put("_id", obj));
-        findOne(queryDoc, fields, handler);
+        findOne(queryDoc, fields, callback);
     }
 
-    public void findOne(BsonDoc queryDoc, BsonDoc fields, final Handler<AsyncResult<BsonDoc>> handler) {
-        __find(queryDoc, fields, 0, -1, Utils.one(handler, result -> {
-            handler.handle(Future.succeededFuture(result));
+    public void findOne(BsonDoc queryDoc, BsonDoc fields, Callback<BsonDoc> callback) {
+        __find(queryDoc, fields, 0, -1, callback.one(result -> {
+            callback.ok(result);
         }));
     }
 
-    public void indexInformation(Handler<ReadStream<BsonDoc>> handler) {
+    public void indexInformation(CallbackReadStream<BsonDoc> callback) {
         BsonDoc query = BsonDoc.newDoc(d -> d.put("ns", fullname()));
         BsonDoc fields = BsonDoc.newDoc(d -> d.put("ns", 0));
 
-        database.collection("system.indexes").__find(query, fields, 0, 100, handler);
+        database.collection("system.indexes").__find(query, fields, 0, 100, callback);
     }
 
-    public void createIndex(BsonDoc keys, BsonDoc options, Handler<AsyncResult<Void>> handler) {
+    public void createIndex(BsonDoc keys, BsonDoc options, Callback<Void> callback) {
 
     }
 
-    public void dropIndexes(String name, Handler<AsyncResult<BsonDoc>> handler) {
-        dropIndex("*", handler);
+    public void dropIndexes(String name, Callback<BsonDoc> callback) {
+        dropIndex("*", callback);
     }
 
-    public void dropIndex(String name, Handler<AsyncResult<BsonDoc>> handler) {
+    public void dropIndex(String name, Callback<BsonDoc> callback) {
         BsonDoc cmd = BsonDoc.newDoc(d -> d.put("dropIndexes", collectionName).put("index", name));
-        database.command(cmd, 0, 1, handler);
+        database.command(cmd, 0, 1, callback);
     }
 
-    public void count(final Handler<AsyncResult<Long>> handler) {
+    public void count(final Callback<Long> callback) {
 
         BsonDoc queryDoc = BsonDoc.newDoc(d -> d.put("count", collectionName));
 
-        database.command(queryDoc, 0, 1, Utils.handler(handler, result -> {
-            handler.handle(Future.succeededFuture((long) result.getInt("n")));
+        database.command(queryDoc, 0, 1, callback.call(result -> {
+            callback.ok((long) result.getInt("n"));
         }));
     }
 
@@ -200,32 +200,32 @@ public class Collection {
         return queryCmd;
     }
 
-    public void __find(BsonDoc ref, BsonDoc fields, int skip, int size, Handler<ReadStream<BsonDoc>> stream) {
+
+    
+    public void __find(BsonDoc ref, BsonDoc fields, int skip, int size, CallbackReadStream<BsonDoc> stream) {
         Query queryCmd = makeQuery(ref, fields, skip, size);
 
-        Utils.ElementReadStream<BsonDoc> rs = new Utils.ElementReadStream<>();
-        stream.handle(rs);
-        database.execute(queryCmd, null, new Handler<AsyncResult<Reply>>() {
-            @Override
-            public void handle(AsyncResult<Reply> result) {
-                if (result.failed()) {
-                    //rs.fail(result.cause());
+        stream.call(rs -> {
+            database.execute(queryCmd, null, new Callback<Reply>() {
+                @Override
+                public void call(Reply result, Throwable error) {
+                    if (error != null) {
+                        rs.fail(error);
+                    }
+                    for (int i = 0; i < result.getNumberReturned(); i++) {
+                        rs.send(result.getDocuments().get(i));
+                    }
+                    if (result.getCursorID() == 0) {
+                        rs.end();
+                    } else {
+                        GetMore getMore =  new GetMore();
+                        getMore.setCursorId(result.getCursorID());
+                        getMore.setNumberToReturn(size);
+                        getMore.setCollectionName(fullname());
+                        database.execute(getMore, null, this);
+                    }
                 }
-                //System.out.println(reply.getCursorID());
-                Reply reply = result.result();
-            	for (int i = 0; i < reply.getNumberReturned(); i++) {
-            		rs.send(reply.getDocuments().get(i));
-            	}
-            	if (reply.getCursorID() == 0) {
-            	    rs.end();
-            	} else {
-            	    GetMore getMore =  new GetMore();
-            	    getMore.setCursorId(reply.getCursorID());
-            	    getMore.setNumberToReturn(size);
-            	    getMore.setCollectionName(fullname());
-            	    database.execute(getMore, null, this);
-            	}
-            }
+            });
         });
     }
 }

@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.github.bckfnn.callback.Callback;
 import io.github.bckfnn.mongodb.bson.BsonDecoder;
 import io.github.bckfnn.mongodb.bson.BsonDoc;
 import io.github.bckfnn.mongodb.bson.BsonEncoder;
@@ -27,8 +28,6 @@ import io.github.bckfnn.mongodb.bson.Element;
 import io.github.bckfnn.mongodb.msg.KillCursors;
 import io.github.bckfnn.mongodb.msg.OutMessage;
 import io.github.bckfnn.mongodb.msg.Reply;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -46,7 +45,7 @@ public class Client {
     private NetSocket netSocket;
     private int requestId;
 
-    private Map<Integer, Handler<AsyncResult<Reply>>> callbacks = new HashMap<>();
+    private Map<Integer, Callback<Reply>> callbacks = new HashMap<>();
 
     private int maxBsonSize = 16 * 1024 * 1024;
     int outstanding = 0;
@@ -57,13 +56,13 @@ public class Client {
 		this.port = port;
 	}
 
-	public void open(final Handler<AsyncResult<Client>> handler) {
+	public void open(final Callback<Client> callback) {
 
         netClient = vertx.createNetClient();
 
         netClient.connect(port, host, result -> {
             if (result.failed()) {
-                handler.handle(Future.failedFuture(result.cause()));
+                callback.fail(result.cause());
             } else {
                 netSocket = result.result();
 
@@ -82,11 +81,11 @@ public class Client {
                             Reply reply = new Reply();
                             reply.read(new BsonDecoder(buffer));
                             //System.out.println(reply);
-                            //System.out.println(reply.getDocuments());
-                            Handler<AsyncResult<Reply>> callback = callbacks.remove(reply.getResponseId());
+                            System.out.println(reply.getResponseId() + " " + reply.getDocuments());
+                            Callback<Reply> callback = callbacks.remove(reply.getResponseId());
                             if (callback != null) {
                                 outstanding--;
-                                callback.handle(Future.succeededFuture(reply));
+                                callback.ok(reply);
                             } else {
                                 System.err.println("no callback:" + callback + "  for " + reply.getResponseId());
                             }
@@ -104,11 +103,11 @@ public class Client {
                 });
                 netSocket.handler(rp);
 
-                database("admin").command("ismaster", 0, 1, Utils.handler(handler, r -> {
+                database("admin").command("ismaster", 0, 1, callback.call(r -> {
                     maxBsonSize = r.getInt("maxBsonObjectSize");
 
                     System.out.println("got ismaster callback");
-                    handler.handle(Future.succeededFuture(this));
+                    callback.ok(this);
                 }));
             }
         });
@@ -123,9 +122,9 @@ public class Client {
     	return new Database(this, name);
     }
 
-    public void write(OutMessage msg, OutMessage lastError, final Handler<AsyncResult<Reply>> callback) {
+    public void write(OutMessage msg, OutMessage lastError, final Callback<Reply> callback) {
         msg.setRequestId(++requestId);
-        //System.out.println("write-request:" + requestId);
+        System.out.println("write-request:" + requestId + " " + msg);
 
         BsonEncoder enc = new BsonEncoder();
         msg.send(enc);
@@ -136,7 +135,7 @@ public class Client {
 
         if (msg.hasResponse() || lastError != null) {
             outstanding++;
-            //System.out.println("outstanding:" + outstanding);
+            System.out.println("outstanding:" + outstanding);
             callbacks.put(requestId, callback);
             netSocket.write(enc.getBuffer());
         } else {
@@ -144,54 +143,54 @@ public class Client {
         }
     }
 
-    public void getDatabaseNames(final Handler<AsyncResult<List<String>>> handler) {
-        listDatabases(Utils.handler(handler, result -> {
+    public void getDatabaseNames(final Callback<List<String>> callback) {
+        listDatabases(callback.call(result -> {
             List<String> list = new ArrayList<>();
             for (BsonDoc doc : result) {
                 list.add(doc.getString("name"));
             }
-            handler.handle(Future.succeededFuture(list));
+            callback.ok(list);
         }));
     }
 
-    public void listDatabases(final Handler<AsyncResult<List<BsonDoc>>> handler) {
-        database("admin").command("listDatabases", 0, -1, Utils.handler(handler, result -> {
+    public void listDatabases(final Callback<List<BsonDoc>> callback) {
+        database("admin").command("listDatabases", 0, -1, callback.call(result -> {
             List<BsonDoc> list = new ArrayList<>();
             for (Element e : result.getArray("databases")) {
                 list.add((BsonDoc) e);
             }
-            handler.handle(Future.succeededFuture(list));
+            callback.ok(list);
         }));
     }
 
 
-    public void fsync(boolean async, Handler<AsyncResult<BsonDoc>> handler) {
+    public void fsync(boolean async, Callback<BsonDoc> callback) {
         BsonDoc cmd = BsonDoc.newDoc(n -> {
             n.put("fsync", 1);
             if (async) {
                 n.put("async", 1);
             }
         });
-        database("admin").command(cmd, 0, 1, handler);
+        database("admin").command(cmd, 0, 1, callback);
     }
 
-    public void fsyncAndLock(Handler<AsyncResult<BsonDoc>> handler) {
+    public void fsyncAndLock(Callback<BsonDoc> callback) {
         BsonDoc cmd = BsonDoc.newDoc(d -> {
             d.put("fsync", 1);
             d.put("lock", 1);
         });
 
-        database("admin").command(cmd, 0, 1, handler);
+        database("admin").command(cmd, 0, 1, callback);
     }
 
-    public void isLocked(Handler<AsyncResult<Boolean>> handler) {
+    public void isLocked(Callback<Boolean> callback) {
         Database admin = database("admin");
         Collection col = admin.collection("$cmd.sys.inprog");
-        col.__find(null, null, 0, 1, Utils.one(handler,  result -> {
+        col.__find(null, null, 0, 1, callback.one(result -> {
             if (result.get("fsyncLock") != null) {
-                handler.handle(Future.succeededFuture(result.getInt("fsyncLock") == 1));
+                callback.ok(result.getInt("fsyncLock") == 1);
             } else {
-                handler.handle(Future.succeededFuture(false));
+                callback.ok(false);
             }
         }));
     }
@@ -199,31 +198,31 @@ public class Client {
     /**
      * Unlocks the database, allowing the write operations to go through.
      * This command may be asynchronous on the server, which means there may be a small delay before the database becomes writable.
-     * @param handler
+     * @param callback
      */
-    public void unlock(Handler<AsyncResult<BsonDoc>> handler) {
+    public void unlock(Callback<BsonDoc> callback) {
         Database admin = database("admin");
         Collection col = admin.collection("$cmd.sys.unlock");
-        col.__find(null, null, 0, 1, Utils.one(handler, result -> {
-            handler.handle(Future.succeededFuture(result));
+        col.__find(null, null, 0, 1, callback.one(result -> {
+            callback.ok(result);;
         }));
     }
 
 
-    public void killCursor(List<Long> cursors, final Handler<AsyncResult<Boolean>> handler) {
+    public void killCursor(List<Long> cursors, final Callback<Boolean> callback) {
         KillCursors cmd = new KillCursors();
         cmd.setCursorIds(cursors);
-        write(cmd, null, Utils.handler(handler, result -> {
-            handler.handle(Future.succeededFuture(true));
+        write(cmd, null, callback.call(result -> {
+            callback.ok(true);
         }));
     }
 
-    public void serverInfo(Handler<AsyncResult<BsonDoc>> callback) {
+    public void serverInfo(Callback<BsonDoc> callback) {
         database("admin").command("buildinfo", 0, 1, callback);
     }
 
-    public void dropDatabase(String name, final Handler<AsyncResult<BsonDoc>> handler) {
-        database(name).dropDatabase(handler);
+    public void dropDatabase(String name, Callback<BsonDoc> callback) {
+        database(name).dropDatabase(callback);
     }
 
     /*

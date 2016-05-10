@@ -22,6 +22,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.github.bckfnn.callback.Callback;
 import io.github.bckfnn.mongodb.Client;
 import io.github.bckfnn.mongodb.Collection;
 import io.github.bckfnn.mongodb.Database;
@@ -42,34 +43,34 @@ public class CollectionTest {
     @Test
     public void testDatabases(TestContext context) throws InterruptedException {
         final Client client = new Client(rule.vertx(), "localhost", 27017);
-        client.open(context.asyncAssertSuccess($ -> {
-            client.getDatabaseNames(context.asyncAssertSuccess(list -> {
+        client.open(Callback.callback(context.asyncAssertSuccess($ -> {
+            client.getDatabaseNames(Callback.callback(context.asyncAssertSuccess(list -> {
                 Collections.sort(list);
 
                 Collection collection = client.database("test_X").collection("coll");
 
                 BsonDoc val = BsonDoc.newDoc(d -> d.put("a", "value"));
 
-                collection.insert(val, WriteConcern.SAFE, context.asyncAssertSuccess(result -> {
+                collection.insert(val, WriteConcern.SAFE, Callback.callback(context.asyncAssertSuccess(result -> {
                     context.assertEquals(1, (int) result.getOk());
 
-                    client.getDatabaseNames(context.asyncAssertSuccess(list2 -> {
+                    client.getDatabaseNames(Callback.callback(context.asyncAssertSuccess(list2 -> {
                         context.assertTrue(list2.contains("test_X"));
 
-                        client.dropDatabase("test_X", context.asyncAssertSuccess(r -> {
+                        client.dropDatabase("test_X", Callback.callback(context.asyncAssertSuccess(r -> {
                             context.assertEquals(1.0, r.getDouble("ok"));
 
-                            client.getDatabaseNames(context.asyncAssertSuccess(list3 -> {
+                            client.getDatabaseNames(Callback.callback(context.asyncAssertSuccess(list3 -> {
                                 context.assertFalse(list3.contains("test_X"));
-                            }));
-                        }));
+                            })));
+                        })));
 
-                    }));
-                }));
+                    })));
+                })));
 
 
-            }));
-        }));
+            })));
+        })));
     }
 
 
@@ -77,10 +78,10 @@ public class CollectionTest {
     public void testCollections(TestContext context) throws InterruptedException {
 
         final Client client = new Client(rule.vertx(), "localhost", 27017);
-        client.open(context.asyncAssertSuccess($ -> {
+        client.open(Callback.callback(context.asyncAssertSuccess($ -> {
             Database database =  client.database("test_Y");
 
-            database.dropDatabase(context.asyncAssertSuccess(doc -> {
+            database.dropDatabase(Callback.callback(context.asyncAssertSuccess(doc -> {
                 context.assertEquals(1.0, doc.getDouble("ok"));
 
                 database.collectionNames(rs -> {
@@ -91,54 +92,55 @@ public class CollectionTest {
 
                         BsonDoc val = BsonDoc.newDoc(d -> d.put("a", "value"));
 
-                        collection.insert(val, WriteConcern.SAFE, context.asyncAssertSuccess(writeResult -> {
+                        collection.insert(val, WriteConcern.SAFE, Callback.callback(context.asyncAssertSuccess(writeResult -> {
                             context.assertEquals(1, (int) writeResult.getOk());
-
+                            System.out.println("written");
                             database.collectionNames(rs2 -> {
+                                System.out.println("collectionNames:" + rs2);
                                 Utils.collect(rs, context.asyncAssertSuccess(result2 -> {
                                     context.assertEquals(1, result2.size());
                                     context.assertEquals(Arrays.asList("coll"), result2);
                                 }));
                             });
-                        }));
+                        })));
                     }));
                 });
-            }));
+            })));
 
-        }));
+        })));
     }
 
     @Test
     public void testInsert(TestContext context) throws InterruptedException {
         final Client client = new Client(rule.vertx(), "localhost", 27017);
-        client.open(context.asyncAssertSuccess($ -> {
+        client.open(Callback.callback(context.asyncAssertSuccess($ -> {
             Database database =  client.database("test_Z");
-            database.dropDatabase(context.asyncAssertSuccess(doc -> {
+            database.dropDatabase(Callback.callback(context.asyncAssertSuccess(doc -> {
                 context.assertEquals(1.0, doc.getDouble("ok"));
 
                 Collection collection = database.collection("coll");
 
                 BsonDoc val = BsonDoc.newDoc(d -> d.put("a", "value"));
 
-                collection.insert(val, WriteConcern.SAFE, context.asyncAssertSuccess(writeResult -> {
+                collection.insert(val, WriteConcern.SAFE, Callback.callback(context.asyncAssertSuccess(writeResult -> {
                     context.assertEquals(1, (int) writeResult.getOk());
 
-                    database.collection("coll").count(context.asyncAssertSuccess(count1 -> {
+                    database.collection("coll").count(Callback.callback(context.asyncAssertSuccess(count1 -> {
                         context.assertEquals(1l, count1.longValue());
 
                         BsonDoc val2 = BsonDoc.newDoc(d -> d.put("a", "value"));
 
-                        collection.insert(val2, WriteConcern.SAFE, context.asyncAssertSuccess(writeResult2 -> {
+                        collection.insert(val2, WriteConcern.SAFE, Callback.callback(context.asyncAssertSuccess(writeResult2 -> {
                             context.assertEquals(1, (int) writeResult2.getOk());
 
-                            database.collection("coll").count(context.asyncAssertSuccess(count2 -> {
+                            database.collection("coll").count(Callback.callback(context.asyncAssertSuccess(count2 -> {
                                 context.assertEquals(2l, count2.longValue());
-                            }));
-                        }));
-                    }));
-                }));
-            }));
-        }));
+                            })));
+                        })));
+                    })));
+                })));
+            })));
+        })));
     }
 
 }
