@@ -160,7 +160,7 @@ public class Collection {
         }));
     }
 
-    public void indexInformation(Handler<ReadStream<BsonDoc>> handler) {
+    public void indexInformation(Handler<AsyncResult<Cursor<BsonDoc>>> handler) {
         BsonDoc query = BsonDoc.newDoc(d -> d.put("ns", fullname()));
         BsonDoc fields = BsonDoc.newDoc(d -> d.put("ns", 0));
 
@@ -200,24 +200,27 @@ public class Collection {
         return queryCmd;
     }
 
-    public void __find(BsonDoc ref, BsonDoc fields, int skip, int size, Handler<ReadStream<BsonDoc>> stream) {
+    public void __find(BsonDoc ref, BsonDoc fields, int skip, int size, Handler<AsyncResult<Cursor<BsonDoc>>> handler) {
         Query queryCmd = makeQuery(ref, fields, skip, size);
 
-        Utils.ElementReadStream<BsonDoc> rs = new Utils.ElementReadStream<>();
-        stream.handle(rs);
+        Cursor<BsonDoc> cursor = new Cursor<>();
         database.execute(queryCmd, null, new Handler<AsyncResult<Reply>>() {
             @Override
             public void handle(AsyncResult<Reply> result) {
                 if (result.failed()) {
-                    //rs.fail(result.cause());
+                    handler.handle(Future.failedFuture(result.cause()));
+                    return;
+                }
+                Reply reply = result.result();
+                if (reply.getStartingFrom() == 0) {
+                    handler.handle(Future.succeededFuture(cursor));
                 }
                 //System.out.println(reply.getCursorID());
-                Reply reply = result.result();
             	for (int i = 0; i < reply.getNumberReturned(); i++) {
-            		rs.send(reply.getDocuments().get(i));
+            		cursor.send(reply.getDocuments().get(i));
             	}
             	if (reply.getCursorID() == 0) {
-            	    rs.end();
+            	    cursor.end();
             	} else {
             	    GetMore getMore =  new GetMore();
             	    getMore.setCursorId(reply.getCursorID());

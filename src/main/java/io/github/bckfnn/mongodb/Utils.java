@@ -39,36 +39,44 @@ public class Utils {
         };
     }
 
-    public static <T, R> Handler<ReadStream<R>> one(Handler<AsyncResult<T>> handler, Consumer<R> func) {
+    public static <T, R> Handler<AsyncResult<Cursor<R>>> one(Handler<AsyncResult<T>> handler, Consumer<R> func) {
         return ar -> {
-            ar.exceptionHandler(e -> {
-                handler.handle(Future.failedFuture(e));
-            });
-            ar.handler(data -> {
-                func.accept(data);
-            });
+            if (ar.failed()) {
+                handler.handle(Future.failedFuture(ar.cause()));
+            } else {
+                ar.result().exceptionHandler(e -> {
+                    handler.handle(Future.failedFuture(e));
+                });
+                ar.result().handler(data -> {
+                    func.accept(data);
+                });
+            }
         };
     }
 
-    public static <T> void collect(ReadStream<T> rs, Handler<AsyncResult<List<T>>> handler) {
+    public static <T> void collect(AsyncResult<Cursor<T>> rs, Handler<AsyncResult<List<T>>> handler) {
         ArrayList<T> list = new ArrayList<>();
-        rs.endHandler($ -> handler.handle(Future.succeededFuture(list)));
-        rs.exceptionHandler(t -> handler.handle(Future.failedFuture(t)));
-        rs.handler(data -> list.add(data));
+        rs.result().endHandler($ -> handler.handle(Future.succeededFuture(list)));
+        rs.result().exceptionHandler(t -> handler.handle(Future.failedFuture(t)));
+        rs.result().handler(data -> list.add(data));
     }
 
-    public static <T, R> Handler<ReadStream<R>> each(Handler<ReadStream<T>> handler, BiConsumer<Consumer<T>, R> consumer) {
+    public static <T, R> Handler<AsyncResult<Cursor<R>>> each(Handler<AsyncResult<Cursor<T>>> handler, BiConsumer<Consumer<T>, R> consumer) {
         ElementReadStream<T> rs = new ElementReadStream<T>();
         return ar -> {
-            ar.exceptionHandler(e -> {
-                rs.fail(e);
-            });
-            ar.endHandler($ -> {
-                rs.end();
-            });
-            ar.handler(data -> {
-                consumer.accept(result -> rs.send(result), data);
-            });
+            if (ar.failed()) {
+                handler.handle(Future.failedFuture(ar.cause()));
+            } else {
+                ar.result().exceptionHandler(e -> {
+                    rs.fail(e);
+                });
+                ar.result().endHandler($ -> {
+                    rs.end();
+                });
+                ar.result().handler(data -> {
+                    consumer.accept(result -> rs.send(result), data);
+                });
+            }
         };
     }
 

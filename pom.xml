@@ -37,6 +37,11 @@
             <scope>test</scope>
         </dependency>
         
+        <dependency>
+            <groupId>io.github.bckfnn</groupId>
+            <artifactId>actioner-callback</artifactId>
+            <version>0.1.5</version>
+        </dependency>
         
 		<dependency>
 			<groupId>junit</groupId>

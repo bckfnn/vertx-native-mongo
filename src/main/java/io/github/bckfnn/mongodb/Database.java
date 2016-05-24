@@ -22,8 +22,6 @@ import io.github.bckfnn.mongodb.msg.Reply;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.streams.ReadStream;
-
 
 public class Database {
 	Client client;
@@ -46,14 +44,14 @@ public class Database {
         return new Collection(this, collectionName);
     }
 
-    public void collectionsInfo(Handler<ReadStream<BsonDoc>> handler) {
+    public void collectionsInfo(Handler<AsyncResult<Cursor<BsonDoc>>> handler) {
         BsonDoc queryDoc = BsonDoc.newDoc(d -> {});
     	collection("system.namespaces").__find(queryDoc, null, 0, 10, Utils.each(handler, (func, doc) -> {
     	    func.accept(doc);
     	}));
     }
 
-    public void collectionNames(Handler<ReadStream<String>> handler) {
+    public void collectionNames(Handler<AsyncResult<Cursor<String>>> handler) {
     	collectionsInfo(Utils.each(handler, (func, doc) -> {
 		    String cname = doc.getString("name").substring(name.length() + 1);
 		    if (cname.indexOf('.') < 0) {
